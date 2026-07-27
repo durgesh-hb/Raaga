@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">RAGGA Stream</string>
+    <string name="title_activity_main">RAGGA Stream</string>
+    <string name="package_name">com.ragga.stream</string>
+    <string name="custom_url_scheme">com.ragga.stream</string>
+</resources>

@@ -1,0 +1,6 @@
+{
+  "name": "RAGGA Music - Sky High",
+  "description": "Atmospheric music streaming application with weightless UI, full playback controls, search exploration, and personalized library.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
