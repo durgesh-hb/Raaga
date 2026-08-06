@@ -67,7 +67,7 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
       {/* Top Header */}
       <header className="sticky top-0 w-full z-40 bg-white/60 dark:bg-black/40 backdrop-blur-xl flex justify-between items-center px-4 md:px-10 h-16 shadow-[0_8px_32px_rgba(14,165,233,0.08)]">
         <button
-          onClick={() => onNavigate('home', 'push_back')}
+          onClick={() => onNavigate('back' as any, 'push_back')}
           className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#0ea5e9]/10 transition-colors active:scale-95 duration-200 cursor-pointer"
         >
           <span className="material-symbols-outlined text-[#006591] dark:text-[#38bdf8]">
