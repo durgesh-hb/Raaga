@@ -32,7 +32,7 @@ export const getApiBaseUrl = (): string => {
   }
 
   // Local web development
-  return 'http://localhost:8080';
+  return 'https://raaga-backend-deployment.onrender.com';
 };
 
 export const API_BASE_URL = getApiBaseUrl();

@@ -9,56 +9,56 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
   const [email, setEmail] = useState('alex@email.com');
 
   return (
-    <div className="sky-gradient min-h-screen flex flex-col items-center justify-center p-4 md:p-10 relative overflow-hidden transition-colors duration-300">
-      {/* Atmospheric Background Decoration */}
-      <div className="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#006591]/10 dark:bg-[#38bdf8]/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#006686]/10 dark:bg-[#0ea5e9]/10 rounded-full blur-[100px] pointer-events-none" />
+    <div className="bg-[#121212] min-h-screen flex flex-col items-center justify-center p-4 md:p-10 relative overflow-hidden transition-colors duration-300">
+      {/* Atmospheric Background Glow */}
+      <div className="fixed top-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#1DB954]/10 rounded-full blur-[140px] pointer-events-none" />
+      <div className="fixed bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#1DB954]/5 rounded-full blur-[120px] pointer-events-none" />
 
       <main className="w-full max-w-[1100px] grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative z-10 my-auto">
         {/* Left Side: Branding & Illustration */}
         <div className="hidden md:flex flex-col space-y-8 pr-8">
           <header className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-[#0ea5e9] rounded-xl flex items-center justify-center shadow-lg shadow-[#006591]/20">
-              <span className="material-symbols-outlined text-white text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                cloud
+            <div className="w-12 h-12 bg-[#1DB954] rounded-full flex items-center justify-center shadow-lg shadow-[#1DB954]/30">
+              <span className="material-symbols-outlined text-black text-3xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
+                graphic_eq
               </span>
             </div>
-            <h1 className="text-2xl font-extrabold text-[#006591] dark:text-[#38bdf8] tracking-tight">RAGGA</h1>
+            <h1 className="text-2xl font-extrabold text-white tracking-tight">RAAGA</h1>
           </header>
 
           <div className="space-y-4">
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-[#141d21] dark:text-white leading-tight">
-              Your music, <br />
-              <span className="text-[#0ea5e9] dark:text-[#38bdf8]">light as air.</span>
+            <h2 className="text-4xl lg:text-5xl font-extrabold text-white leading-tight">
+              Music for <br />
+              <span className="text-[#1DB954]">everyone.</span>
             </h2>
-            <p className="text-lg text-[#3e4850] dark:text-slate-300 max-w-md">
-              Experience a revolutionary way to stream. High-fidelity audio meets a weightless interface designed for absolute focus.
+            <p className="text-lg text-[#B3B3B3] max-w-md">
+              Millions of songs and podcasts. High-fidelity audio with a modern dark mode interface built for seamless music discovery.
             </p>
           </div>
 
           {/* Hero Illustration Component */}
           <div className="relative w-full aspect-square max-w-sm floating">
-            <div className="absolute inset-0 bg-[#006591]/5 rounded-[40px] rotate-6 scale-95" />
-            <div className="relative w-full h-full rounded-[40px] overflow-hidden shadow-[0_20px_50px_rgba(14,165,233,0.15)] border border-white/50 dark:border-white/10">
+            <div className="absolute inset-0 bg-[#1DB954]/10 rounded-[40px] rotate-6 scale-95" />
+            <div className="relative w-full h-full rounded-[40px] overflow-hidden shadow-2xl border border-[#282828]">
               <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
                   backgroundImage: `url('https://lh3.googleusercontent.com/aida-public/AB6AXuCUYtn9UvrTr_AsKx9gjtxW1M1PGYQNIQLMX4k2aBCELHPxZjjZyebChJoa9fLpsehBhDxEvNuXKIdM0DtQzy5sjKa8Mw9ycen1y_nzcoyqf01Fy02szjJXIw4MNmY1-MKnviLm5oD4SEOQoDR_R1EfABpNfPAah1DtkAYrd_yFIGoRGzWeUgLppc688TP5tbm0qZVDuZ9QbL5TYA962Jqd6mBAeyryeg0tz6oWWnPdb9ngkNmrwAxLx6qWnL4zYTQ7GCvwXxJBTf_')`,
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#006591]/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#121212] via-[#121212]/30 to-transparent" />
             </div>
 
             {/* Floating Micro-UI element */}
-            <div className="absolute bottom-6 -right-6 glass-card p-4 rounded-2xl shadow-xl flex items-center space-x-4 animate-pulse">
-              <div className="w-10 h-10 rounded-lg bg-[#006686] flex items-center justify-center text-white">
-                <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <div className="absolute bottom-6 -right-6 bg-[#282828] border border-[#3E3E3E] p-4 rounded-2xl shadow-2xl flex items-center space-x-4 animate-pulse">
+              <div className="w-10 h-10 rounded-full bg-[#1DB954] flex items-center justify-center text-black">
+                <span className="material-symbols-outlined text-black font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
                   play_arrow
                 </span>
               </div>
               <div>
-                <div className="h-2 w-24 bg-[#3e4850]/20 dark:bg-white/20 rounded-full mb-2" />
-                <div className="h-2 w-16 bg-[#3e4850]/10 dark:bg-white/10 rounded-full" />
+                <div className="h-2 w-24 bg-[#1DB954]/80 rounded-full mb-2" />
+                <div className="h-2 w-16 bg-[#B3B3B3]/40 rounded-full" />
               </div>
             </div>
           </div>
@@ -68,24 +68,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
         <div className="w-full flex flex-col items-center">
           {/* Mobile Logo */}
           <div className="md:hidden mb-6 flex flex-col items-center">
-            <div className="w-16 h-16 bg-[#0ea5e9] rounded-2xl flex items-center justify-center shadow-lg shadow-[#006591]/20 mb-3">
-              <span className="material-symbols-outlined text-white text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                cloud
+            <div className="w-16 h-16 bg-[#1DB954] rounded-full flex items-center justify-center shadow-lg shadow-[#1DB954]/30 mb-3">
+              <span className="material-symbols-outlined text-black text-4xl font-bold" style={{ fontVariationSettings: "'FILL' 1" }}>
+                graphic_eq
               </span>
             </div>
-            <h1 className="text-2xl font-extrabold text-[#006591] dark:text-[#38bdf8]">RAGGA</h1>
+            <h1 className="text-2xl font-extrabold text-white">RAAGA</h1>
           </div>
 
-          <div className="glass-card w-full p-6 md:p-10 rounded-[32px] shadow-[0_8px_32px_rgba(14,165,233,0.12)] flex flex-col">
+          <div className="bg-[#181818] border border-[#282828] w-full p-6 md:p-10 rounded-[32px] shadow-2xl flex flex-col">
             <div className="mb-8 text-center md:text-left">
-              <h2 className="text-2xl md:text-3xl font-extrabold text-[#141d21] dark:text-white mb-1">Welcome back</h2>
-              <p className="text-base text-[#3e4850] dark:text-slate-300 font-medium">Elevate your listening experience today.</p>
+              <h2 className="text-2xl md:text-3xl font-extrabold text-white mb-1">Welcome back</h2>
+              <p className="text-base text-[#B3B3B3] font-medium">Log in to your RAAGA account.</p>
             </div>
 
             {/* Social Login Button */}
             <button
               onClick={() => onNavigate('home', 'push')}
-              className="w-full h-14 bg-white dark:bg-slate-800 border border-[#bec8d2] dark:border-slate-700 hover:border-[#0ea5e9] transition-all duration-300 rounded-2xl flex items-center justify-center space-x-3 group shadow-sm active:scale-[0.98] cursor-pointer"
+              className="w-full h-14 bg-[#282828] border border-[#3E3E3E] hover:border-white transition-all duration-300 rounded-full flex items-center justify-center space-x-3 group shadow-sm active:scale-[0.98] cursor-pointer"
             >
               <svg className="w-6 h-6" viewBox="0 0 24 24">
                 <path
@@ -105,29 +105,29 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
                   fill="#EA4335"
                 />
               </svg>
-              <span className="text-sm font-bold text-[#141d21] dark:text-white">Connect with Google</span>
+              <span className="text-sm font-bold text-white">Continue with Google</span>
             </button>
 
             {/* Divider */}
             <div className="my-6 flex items-center space-x-4">
-              <div className="h-[1px] flex-1 bg-[#bec8d2]/30 dark:bg-slate-700" />
-              <span className="text-xs text-[#3e4850]/60 dark:text-slate-400 uppercase tracking-widest font-mono">OR</span>
-              <div className="h-[1px] flex-1 bg-[#bec8d2]/30 dark:bg-slate-700" />
+              <div className="h-[1px] flex-1 bg-[#282828]" />
+              <span className="text-xs text-[#B3B3B3] uppercase tracking-widest font-mono">OR</span>
+              <div className="h-[1px] flex-1 bg-[#282828]" />
             </div>
 
             {/* Input Fields */}
             <div className="space-y-4 mb-6">
               <div className="space-y-1.5">
-                <label className="text-sm font-bold text-[#3e4850] dark:text-slate-300 ml-1">Email Address</label>
+                <label className="text-sm font-bold text-[#B3B3B3] ml-1">Email Address</label>
                 <div className="relative group">
                   <input
-                    className="w-full h-14 bg-[#ecf5fb] dark:bg-slate-800 border border-[#bec8d2] dark:border-slate-700 text-[#141d21] dark:text-white rounded-xl px-5 text-base focus:ring-2 focus:ring-[#0ea5e9] outline-none"
+                    className="w-full h-14 bg-[#282828] border border-[#3E3E3E] text-white placeholder-[#B3B3B3] rounded-full px-5 text-base focus:ring-1 focus:ring-[#1DB954] focus:border-[#1DB954] outline-none"
                     placeholder="alex@email.com"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                  <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-[#3e4850]/40 dark:text-slate-400 group-focus-within:text-[#0ea5e9]">
+                  <span className="material-symbols-outlined absolute right-5 top-1/2 -translate-y-1/2 text-[#B3B3B3] group-focus-within:text-[#1DB954]">
                     mail
                   </span>
                 </div>
@@ -137,33 +137,33 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onNavigate }) => {
             {/* Action Button */}
             <button
               onClick={() => onNavigate('home', 'push')}
-              className="w-full h-14 bg-[#006591] dark:bg-[#0ea5e9] text-white text-base font-extrabold rounded-2xl shadow-lg hover:bg-[#004c6e] transition-all duration-300 active:scale-95 mb-6 cursor-pointer"
+              className="w-full h-14 bg-[#1DB954] hover:bg-[#1ED760] text-black text-base font-extrabold rounded-full shadow-lg hover:scale-105 transition-all duration-300 active:scale-95 mb-6 cursor-pointer"
             >
               Continue with Email
             </button>
 
             {/* Secondary Actions */}
             <div className="flex flex-col space-y-3 items-center text-sm">
-              <p className="text-[#3e4850] dark:text-slate-300">
-                New to the sky?{' '}
+              <p className="text-[#B3B3B3]">
+                Don't have an account?{' '}
                 <a
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
                     onNavigate('home', 'push');
                   }}
-                  className="text-[#006591] dark:text-[#38bdf8] font-bold hover:underline ml-1"
+                  className="text-white font-bold hover:text-[#1DB954] hover:underline ml-1"
                 >
-                  Sign Up
+                  Sign up for RAAGA
                 </a>
               </p>
             </div>
           </div>
 
-          <footer className="mt-8 flex flex-wrap justify-center gap-6 text-xs text-[#3e4850]/60 dark:text-slate-400">
-            <a href="#" className="hover:text-[#006591] transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-[#006591] transition-colors">Terms of Service</a>
-            <span>© 2024 RAGGA Music</span>
+          <footer className="mt-8 flex flex-wrap justify-center gap-6 text-xs text-[#B3B3B3]">
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+            <span>© 2026 RAAGA Stream</span>
           </footer>
         </div>
       </main>

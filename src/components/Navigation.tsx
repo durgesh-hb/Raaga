@@ -8,17 +8,19 @@ interface NavigationProps {
 
 export const BottomNav: React.FC<NavigationProps> = ({ currentScreen, onNavigate }) => {
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-white/90 dark:bg-[#0b1319]/90 backdrop-blur-2xl border-t border-[#bec8d2]/30 dark:border-slate-800/80 shadow-[0_-4px_24px_rgba(14,165,233,0.12)] transition-colors duration-300">
+    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-[#121212] backdrop-blur-2xl border-t border-[#282828] transition-colors duration-300">
       <button
         onClick={() => onNavigate('home', 'none')}
         className={`flex flex-col items-center justify-center min-w-[64px] min-h-[48px] py-1.5 px-3 transition-all duration-200 active:scale-95 cursor-pointer rounded-2xl ${
           currentScreen === 'home'
-            ? 'text-[#006591] dark:text-[#38bdf8] bg-[#7ed4fd]/30 dark:bg-[#38bdf8]/20 font-bold shadow-sm'
-            : 'text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8]'
+            ? 'text-[#FFFFFF] font-bold'
+            : 'text-[#B3B3B3] hover:text-[#FFFFFF]'
         }`}
       >
         <span
-          className="material-symbols-outlined transition-transform duration-200"
+          className={`material-symbols-outlined transition-transform duration-200 ${
+            currentScreen === 'home' ? 'text-[#1DB954]' : ''
+          }`}
           style={currentScreen === 'home' ? { fontVariationSettings: "'FILL' 1" } : {}}
         >
           home
@@ -30,12 +32,14 @@ export const BottomNav: React.FC<NavigationProps> = ({ currentScreen, onNavigate
         onClick={() => onNavigate('search', 'none')}
         className={`flex flex-col items-center justify-center min-w-[64px] min-h-[48px] py-1.5 px-3 transition-all duration-200 active:scale-95 cursor-pointer rounded-2xl ${
           currentScreen === 'search' || currentScreen === 'results'
-            ? 'text-[#006591] dark:text-[#38bdf8] bg-[#7ed4fd]/30 dark:bg-[#38bdf8]/20 font-bold shadow-sm'
-            : 'text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8]'
+            ? 'text-[#FFFFFF] font-bold'
+            : 'text-[#B3B3B3] hover:text-[#FFFFFF]'
         }`}
       >
         <span
-          className="material-symbols-outlined transition-transform duration-200"
+          className={`material-symbols-outlined transition-transform duration-200 ${
+            currentScreen === 'search' || currentScreen === 'results' ? 'text-[#1DB954]' : ''
+          }`}
           style={
             currentScreen === 'search' || currentScreen === 'results'
               ? { fontVariationSettings: "'FILL' 1" }
@@ -51,12 +55,14 @@ export const BottomNav: React.FC<NavigationProps> = ({ currentScreen, onNavigate
         onClick={() => onNavigate('library', 'none')}
         className={`flex flex-col items-center justify-center min-w-[64px] min-h-[48px] py-1.5 px-3 transition-all duration-200 active:scale-95 cursor-pointer rounded-2xl ${
           currentScreen === 'library'
-            ? 'text-[#006591] dark:text-[#38bdf8] bg-[#7ed4fd]/30 dark:bg-[#38bdf8]/20 font-bold shadow-sm'
-            : 'text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8]'
+            ? 'text-[#FFFFFF] font-bold'
+            : 'text-[#B3B3B3] hover:text-[#FFFFFF]'
         }`}
       >
         <span
-          className="material-symbols-outlined transition-transform duration-200"
+          className={`material-symbols-outlined transition-transform duration-200 ${
+            currentScreen === 'library' ? 'text-[#1DB954]' : ''
+          }`}
           style={currentScreen === 'library' ? { fontVariationSettings: "'FILL' 1" } : {}}
         >
           library_music
@@ -65,20 +71,22 @@ export const BottomNav: React.FC<NavigationProps> = ({ currentScreen, onNavigate
       </button>
 
       <button
-        onClick={() => onNavigate('settings', 'push')}
+        onClick={() => onNavigate('settings', 'none')}
         className={`flex flex-col items-center justify-center min-w-[64px] min-h-[48px] py-1.5 px-3 transition-all duration-200 active:scale-95 cursor-pointer rounded-2xl ${
           currentScreen === 'settings'
-            ? 'text-[#006591] dark:text-[#38bdf8] bg-[#7ed4fd]/30 dark:bg-[#38bdf8]/20 font-bold shadow-sm'
-            : 'text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8]'
+            ? 'text-[#FFFFFF] font-bold'
+            : 'text-[#B3B3B3] hover:text-[#FFFFFF]'
         }`}
       >
         <span
-          className="material-symbols-outlined transition-transform duration-200"
+          className={`material-symbols-outlined transition-transform duration-200 ${
+            currentScreen === 'settings' ? 'text-[#1DB954]' : ''
+          }`}
           style={currentScreen === 'settings' ? { fontVariationSettings: "'FILL' 1" } : {}}
         >
-          workspace_premium
+          settings
         </span>
-        <span className="font-semibold text-[11px] mt-0.5 tracking-tight">Premium</span>
+        <span className="font-semibold text-[11px] mt-0.5 tracking-tight">Settings</span>
       </button>
     </nav>
   );

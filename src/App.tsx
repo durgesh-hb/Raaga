@@ -114,9 +114,7 @@ function AppContent() {
 
   return (
     <div
-      className={`relative min-h-screen ${
-        isDarkMode ? 'dark' : ''
-      } bg-[#f4faff] dark:bg-[#0b1319] text-[#141d21] dark:text-[#e2e8f0] overflow-x-hidden font-sans transition-colors duration-300`}
+      className="relative min-h-screen dark bg-[#121212] text-white overflow-x-hidden font-sans transition-colors duration-300"
     >
       <AnimatePresence mode="wait">
         <motion.div
