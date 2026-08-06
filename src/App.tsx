@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ScreenType, TransitionType } from './types';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
-import { AudioProvider } from './context/AudioContext';
+import { AudioProvider, useAudio } from './context/AudioContext';
 import { LoginScreen } from './components/LoginScreen';
 import { SearchHomeScreen } from './components/SearchHomeScreen';
 import { SearchExplorerScreen } from './components/SearchExplorerScreen';
@@ -10,18 +10,75 @@ import { YourLibraryScreen } from './components/YourLibraryScreen';
 import { SearchResultsScreen } from './components/SearchResultsScreen';
 import { FullPlayerScreen } from './components/FullPlayerScreen';
 import { SettingsScreen } from './components/SettingsScreen';
+import { useAndroidBackHandler } from './hooks/useAndroidBackHandler';
 
 function AppContent() {
-  const [currentScreen, setCurrentScreen] = useState<ScreenType>('login');
+  // Navigation stack state preserving screen history
+  const [screenHistory, setScreenHistory] = useState<ScreenType[]>(['login']);
   const [activeTransition, setActiveTransition] = useState<TransitionType>('push');
   const [searchQuery, setSearchQuery] = useState('Imagine Dragons');
   const { isDarkMode } = useTheme();
+  const { showToast } = useAudio();
 
-  const handleNavigate = (screen: ScreenType, transition: TransitionType = 'push') => {
-    setActiveTransition(transition);
-    setCurrentScreen(screen);
+  // Root current screen is the last item on the navigation stack
+  const currentScreen = screenHistory[screenHistory.length - 1] || 'home';
+
+  // Navigate to a new screen or pop the stack
+  const handleNavigate = useCallback(
+    (targetScreen: ScreenType | 'back', transition: TransitionType = 'push') => {
+      if (targetScreen === 'back') {
+        goBack();
+        return;
+      }
+
+      setActiveTransition(transition);
+
+      setScreenHistory((prevStack) => {
+        // Switching to top-level tab screens resets stack root to prevent infinite loop
+        if (targetScreen === 'home' || targetScreen === 'login') {
+          return [targetScreen];
+        }
+        // Avoid duplicate entry on top of stack
+        if (prevStack[prevStack.length - 1] === targetScreen) {
+          return prevStack;
+        }
+        // Push target screen to stack
+        return [...prevStack, targetScreen];
+      });
+
+      window.scrollTo(0, 0);
+    },
+    []
+  );
+
+  // Pop top screen from navigation stack
+  const goBack = useCallback(() => {
+    setScreenHistory((prevStack) => {
+      if (prevStack.length > 1) {
+        const nextStack = [...prevStack];
+        const popped = nextStack.pop();
+        // Collapse player with push_back / slide_down transition
+        const transition = popped === 'player' ? 'slide_up' : 'push_back';
+        setActiveTransition(transition);
+        return nextStack;
+      }
+      return prevStack;
+    });
     window.scrollTo(0, 0);
-  };
+  }, []);
+
+  // Handle Root Screen exit prompt (Double-tap to exit / move to background)
+  const handleRootExitPrompt = useCallback(() => {
+    showToast('Press back again to exit application');
+  }, [showToast]);
+
+  // Hook registering Android native hardware Back button listener & web gestures
+  useAndroidBackHandler({
+    currentScreen,
+    historyStackLength: screenHistory.length,
+    onGoBack: goBack,
+    onRootExit: handleRootExitPrompt,
+  });
 
   const getMotionVariants = (transition: TransitionType) => {
     switch (transition) {
