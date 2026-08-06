@@ -4,16 +4,16 @@
 
 @layer base {
   body {
-    background-color: #f4faff;
-    color: #141d21;
-    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: #121212;
+    color: #FFFFFF;
+    font-family: 'Circular', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     overflow-x: hidden;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   body.dark {
-    background-color: #0b1319;
-    color: #e2e8f0;
+    background-color: #121212;
+    color: #FFFFFF;
   }
 }
 
@@ -46,61 +46,61 @@
 }
 
 .glass-card, .sky-glass {
-  background: rgba(255, 255, 255, 0.85);
+  background: #181818;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(224, 242, 254, 0.7);
+  border: 1px solid #282828;
 }
 
 .dark .glass-card, .dark .sky-glass {
-  background: rgba(15, 23, 42, 0.85);
+  background: #181818;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(56, 189, 248, 0.15);
+  border: 1px solid #282828;
 }
 
 .glass-card-elevated {
-  background: rgba(255, 255, 255, 0.92);
+  background: #282828;
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(224, 242, 254, 0.9);
-  box-shadow: 0 20px 40px rgba(14, 165, 233, 0.16);
+  border: 1px solid #3E3E3E;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 .dark .glass-card-elevated {
-  background: rgba(15, 23, 42, 0.92);
+  background: #282828;
   backdrop-filter: blur(32px);
   -webkit-backdrop-filter: blur(32px);
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: 1px solid #3E3E3E;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
 }
 
 .glass-panel {
-  background: rgba(255, 255, 255, 0.90);
+  background: #181818;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
 .dark .glass-panel {
-  background: rgba(15, 23, 42, 0.88);
+  background: #181818;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
 
 .sky-shadow {
-  box-shadow: 0 12px 36px rgba(14, 165, 233, 0.12);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.4);
 }
 
 .dark .sky-shadow {
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
 }
 
 .sky-gradient {
-  background: radial-gradient(circle at top right, #e0f2fe 0%, #f4faff 100%);
+  background: radial-gradient(circle at top right, #181818 0%, #121212 100%);
 }
 
 .dark .sky-gradient {
-  background: radial-gradient(circle at top right, #0f2b3c 0%, #0b1319 100%);
+  background: radial-gradient(circle at top right, #181818 0%, #121212 100%);
 }
 
 @keyframes float {
@@ -163,10 +163,10 @@ button, a, input[type="range"] {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(14, 165, 233, 0.3);
+  background: #282828;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(14, 165, 233, 0.6);
+  background: #1DB954;
 }
 

@@ -2,30 +2,28 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface ThemeColors {
   primary: string;
+  primaryHover: string;
   background: string;
   cardBg: string;
+  elevatedBg: string;
   text: string;
   secondaryText: string;
   borderColor: string;
 }
 
-const lightThemeColors: ThemeColors = {
-  primary: '#006591',
-  background: '#f4faff',
-  cardBg: 'rgba(255, 255, 255, 0.85)',
-  text: '#141d21',
-  secondaryText: '#3e4850',
-  borderColor: '#e0f2fe',
+const brandThemeColors: ThemeColors = {
+  primary: '#1DB954',
+  primaryHover: '#1ED760',
+  background: '#121212',
+  cardBg: '#181818',
+  elevatedBg: '#282828',
+  text: '#FFFFFF',
+  secondaryText: '#B3B3B3',
+  borderColor: '#282828',
 };
 
-const darkThemeColors: ThemeColors = {
-  primary: '#38bdf8',
-  background: '#0b1319',
-  cardBg: 'rgba(15, 23, 42, 0.85)',
-  text: '#f8fafc',
-  secondaryText: '#94a3b8',
-  borderColor: '#1e293b',
-};
+const lightThemeColors: ThemeColors = brandThemeColors;
+const darkThemeColors: ThemeColors = brandThemeColors;
 
 interface ThemeContextType {
   isDarkMode: boolean;
@@ -42,18 +40,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (saved !== null) {
       return saved === 'true';
     }
-    return false;
+    return true;
   });
 
   useEffect(() => {
     localStorage.setItem('ragga_theme_dark', String(isDarkMode));
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      document.body.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.body.classList.remove('dark');
-    }
+    document.documentElement.classList.add('dark');
+    document.body.classList.add('dark');
   }, [isDarkMode]);
 
   const toggleTheme = () => {

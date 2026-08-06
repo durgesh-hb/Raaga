@@ -63,26 +63,26 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
   const progressPercent = Math.min(100, Math.max(0, (position / totalDuration) * 100));
 
   return (
-    <div className="bg-gradient-to-b from-[#f4faff] via-[#e0f2fe] to-[#f4faff] dark:from-[#0b1319] dark:via-[#0f2b3c] dark:to-[#0b1319] min-h-screen text-[#141d21] dark:text-[#e2e8f0] pb-32 flex flex-col justify-between transition-colors duration-300">
+    <div className="bg-gradient-to-b from-[#181818] via-[#121212] to-[#121212] min-h-screen text-white pb-32 flex flex-col justify-between transition-colors duration-300">
       {/* Top Header */}
-      <header className="sticky top-0 w-full z-40 bg-white/60 dark:bg-black/40 backdrop-blur-xl flex justify-between items-center px-4 md:px-10 h-16 shadow-[0_8px_32px_rgba(14,165,233,0.08)]">
+      <header className="sticky top-0 w-full z-40 bg-[#121212]/90 backdrop-blur-xl flex justify-between items-center px-4 md:px-10 h-16 border-b border-[#282828] shadow-md">
         <button
           onClick={() => onNavigate('back' as any, 'push_back')}
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#0ea5e9]/10 transition-colors active:scale-95 duration-200 cursor-pointer"
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#282828] transition-colors active:scale-95 duration-200 cursor-pointer"
         >
-          <span className="material-symbols-outlined text-[#006591] dark:text-[#38bdf8]">
+          <span className="material-symbols-outlined text-white hover:text-[#1DB954]">
             keyboard_arrow_down
           </span>
         </button>
 
         {/* Mode Tabs */}
-        <div className="flex items-center gap-1 bg-[#e0e9ef]/60 dark:bg-slate-800/60 p-1 rounded-full border border-white/40 dark:border-white/10">
+        <div className="flex items-center gap-1 bg-[#282828] p-1 rounded-full border border-[#3E3E3E]">
           <button
             onClick={() => setActiveTab('player')}
             className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
               activeTab === 'player'
-                ? 'bg-[#006591] text-white shadow-md'
-                : 'text-[#3e4850] dark:text-slate-300 hover:text-[#006591]'
+                ? 'bg-[#1DB954] text-black shadow-md'
+                : 'text-[#B3B3B3] hover:text-white'
             }`}
           >
             Player
@@ -91,8 +91,8 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
             onClick={() => setActiveTab('lyrics')}
             className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
               activeTab === 'lyrics'
-                ? 'bg-[#006591] text-white shadow-md'
-                : 'text-[#3e4850] dark:text-slate-300 hover:text-[#006591]'
+                ? 'bg-[#1DB954] text-black shadow-md'
+                : 'text-[#B3B3B3] hover:text-white'
             }`}
           >
             Lyrics
@@ -101,8 +101,8 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
             onClick={() => setActiveTab('queue')}
             className={`px-3 py-1 text-xs font-bold rounded-full transition-all cursor-pointer ${
               activeTab === 'queue'
-                ? 'bg-[#006591] text-white shadow-md'
-                : 'text-[#3e4850] dark:text-slate-300 hover:text-[#006591]'
+                ? 'bg-[#1DB954] text-black shadow-md'
+                : 'text-[#B3B3B3] hover:text-white'
             }`}
           >
             Queue ({queue.length})
@@ -111,10 +111,10 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
         <button
           onClick={() => setShowVolumeBar((prev) => !prev)}
-          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#0ea5e9]/10 transition-colors active:scale-95 duration-200 cursor-pointer"
+          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-[#282828] transition-colors active:scale-95 duration-200 cursor-pointer"
           title="Toggle Volume Slider"
         >
-          <span className="material-symbols-outlined text-[#006591] dark:text-[#38bdf8]">
+          <span className="material-symbols-outlined text-[#B3B3B3] hover:text-[#1DB954]">
             {volume === 0 ? 'volume_off' : volume > 0.5 ? 'volume_up' : 'volume_down'}
           </span>
         </button>
@@ -122,8 +122,8 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
       {/* Floating Volume Slider Bar */}
       {showVolumeBar && (
-        <div className="w-full max-w-sm mx-auto px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full shadow-lg border border-[#0ea5e9]/20 flex items-center gap-3 my-2 animate-fadeIn">
-          <span className="material-symbols-outlined text-xs text-[#006591] dark:text-[#38bdf8]">
+        <div className="w-full max-w-sm mx-auto px-6 py-3 bg-[#282828] backdrop-blur-md rounded-full shadow-2xl border border-[#3E3E3E] flex items-center gap-3 my-2 animate-fadeIn">
+          <span className="material-symbols-outlined text-xs text-[#1DB954]">
             volume_down
           </span>
           <input
@@ -133,9 +133,9 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
             step="0.01"
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-full h-1.5 bg-[#0ea5e9]/30 rounded-lg appearance-none cursor-pointer accent-[#006591]"
+            className="w-full h-1.5 bg-[#535353] rounded-lg appearance-none cursor-pointer accent-[#1DB954]"
           />
-          <span className="text-xs font-mono font-bold text-[#006591] dark:text-[#38bdf8]">
+          <span className="text-xs font-mono font-bold text-[#1DB954]">
             {Math.round(volume * 100)}%
           </span>
         </div>
@@ -155,10 +155,10 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
               }}
             >
               {/* Glow Effect */}
-              <div className="absolute inset-0 bg-[#0ea5e9]/30 blur-[64px] rounded-full scale-95 group-hover:scale-105 transition-transform duration-700" />
+              <div className="absolute inset-0 bg-[#1DB954]/20 blur-[64px] rounded-full scale-95 group-hover:scale-105 transition-transform duration-700" />
 
               {/* Album Card */}
-              <div className="relative w-full h-full rounded-[32px] overflow-hidden shadow-[0_24px_48px_rgba(14,165,233,0.2)] border border-white/50 dark:border-white/10">
+              <div className="relative w-full h-full rounded-[32px] overflow-hidden shadow-[0_24px_48px_rgba(0,0,0,0.6)] border border-[#282828]">
                 <img
                   className="w-full h-full object-cover"
                   alt={currentTrack.title}
@@ -169,27 +169,27 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                 <div className="absolute bottom-6 left-6 right-6 flex items-end justify-between pointer-events-none">
                   <div className="flex gap-1.5 items-end h-9">
                     <div
-                      className={`w-1.5 bg-white/90 rounded-full transition-all ${
+                      className={`w-1.5 bg-[#1DB954] rounded-full transition-all ${
                         isPlaying && !isBuffering ? 'animate-[bounce_0.8s_infinite]' : 'h-3'
                       }`}
                     />
                     <div
-                      className={`w-1.5 bg-white rounded-full transition-all ${
+                      className={`w-1.5 bg-[#1ED760] rounded-full transition-all ${
                         isPlaying && !isBuffering ? 'animate-[bounce_1.2s_infinite]' : 'h-6'
                       }`}
                     />
                     <div
-                      className={`w-1.5 bg-white/70 rounded-full transition-all ${
+                      className={`w-1.5 bg-[#1DB954]/80 rounded-full transition-all ${
                         isPlaying && !isBuffering ? 'animate-[bounce_0.6s_infinite]' : 'h-2'
                       }`}
                     />
                     <div
-                      className={`w-1.5 bg-white/90 rounded-full transition-all ${
+                      className={`w-1.5 bg-[#1DB954] rounded-full transition-all ${
                         isPlaying && !isBuffering ? 'animate-[bounce_1.4s_infinite]' : 'h-5'
                       }`}
                     />
                   </div>
-                  <div className="bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                  <div className="bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-white/10">
                     <span className="text-white text-[10px] font-bold tracking-widest uppercase">
                       {isBuffering ? 'BUFFERING STREAM...' : `${playbackSpeed}X LOSSLESS`}
                     </span>
@@ -201,16 +201,18 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
             {/* Song Metadata */}
             <div className="w-full max-w-[440px] mt-6 flex items-center justify-between">
               <div className="flex flex-col min-w-0 pr-4">
-                <h1 className="text-2xl md:text-3xl font-extrabold text-[#141d21] dark:text-white truncate">
+                <h1 className="text-2xl md:text-3xl font-extrabold text-white truncate">
                   {currentTrack.title}
                 </h1>
-                <p className="text-base text-[#006591] dark:text-[#38bdf8] font-medium truncate mt-0.5">
+                <p className="text-base text-[#B3B3B3] font-medium truncate mt-0.5">
                   {currentTrack.artist} • <span className="opacity-80">{currentTrack.album}</span>
                 </p>
               </div>
               <button
                 onClick={() => toggleFavorite(currentTrack.id)}
-                className="w-12 h-12 flex items-center justify-center rounded-full hover:bg-[#0ea5e9]/10 transition-colors text-[#006591] dark:text-[#38bdf8] cursor-pointer flex-shrink-0"
+                className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-[#282828] transition-colors cursor-pointer flex-shrink-0 ${
+                  isFavorite ? 'text-[#1DB954]' : 'text-[#B3B3B3] hover:text-white'
+                }`}
               >
                 <span
                   className="material-symbols-outlined text-[30px]"
@@ -229,14 +231,14 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                   const pct = (e.clientX - rect.left) / rect.width;
                   seek(pct * totalDuration);
                 }}
-                className="relative w-full h-2.5 bg-[#e0e9ef] dark:bg-slate-700/80 rounded-full overflow-hidden cursor-pointer group shadow-inner"
+                className="relative w-full h-2 bg-[#535353] rounded-full overflow-hidden cursor-pointer group shadow-inner"
               >
                 <div
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#006591] to-[#0ea5e9] rounded-full transition-all duration-100"
+                  className="absolute top-0 left-0 h-full bg-[#1DB954] rounded-full transition-all duration-100 group-hover:bg-[#1ED760]"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
-              <div className="flex justify-between mt-2 text-xs font-semibold text-[#3e4850] dark:text-slate-400">
+              <div className="flex justify-between mt-2 text-xs font-semibold text-[#B3B3B3]">
                 <span>{formatTime(position)}</span>
                 <span>{formatTime(totalDuration)}</span>
               </div>
@@ -250,8 +252,8 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                   onClick={() => setPlaybackSpeed(speed)}
                   className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
                     playbackSpeed === speed
-                      ? 'bg-[#006591] dark:bg-[#0ea5e9] text-white shadow-sm'
-                      : 'bg-white/60 dark:bg-slate-800/60 text-[#3e4850] dark:text-slate-300 hover:bg-[#0ea5e9]/20'
+                      ? 'bg-[#1DB954] text-black shadow-sm'
+                      : 'bg-[#282828] text-[#B3B3B3] hover:text-white'
                   }`}
                 >
                   {speed}x
@@ -265,8 +267,8 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                 onClick={toggleShuffle}
                 className={`w-11 h-11 flex items-center justify-center rounded-full transition-all cursor-pointer ${
                   isShuffle
-                    ? 'text-[#0ea5e9] bg-[#0ea5e9]/15'
-                    : 'text-[#3e4850] dark:text-slate-400 hover:bg-[#e0e9ef] dark:hover:bg-slate-800'
+                    ? 'text-[#1DB954] bg-[#1DB954]/15'
+                    : 'text-[#B3B3B3] hover:text-white hover:bg-[#282828]'
                 }`}
                 title="Shuffle"
               >
@@ -276,7 +278,7 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => skipBackward(10)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full text-[#3e4850] dark:text-slate-400 hover:bg-[#0ea5e9]/15 transition-all active:scale-90 cursor-pointer"
+                  className="w-10 h-10 flex items-center justify-center rounded-full text-[#B3B3B3] hover:text-white hover:bg-[#282828] transition-all active:scale-90 cursor-pointer"
                   title="Rewind 10s"
                 >
                   <span className="material-symbols-outlined text-[22px]">replay_10</span>
@@ -284,7 +286,7 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
                 <button
                   onClick={prevTrack}
-                  className="w-12 h-12 flex items-center justify-center rounded-full text-[#006591] dark:text-[#38bdf8] hover:bg-[#0ea5e9]/15 transition-all active:scale-90 cursor-pointer"
+                  className="w-12 h-12 flex items-center justify-center rounded-full text-white hover:text-[#1DB954] hover:bg-[#282828] transition-all active:scale-90 cursor-pointer"
                   title="Previous Track"
                 >
                   <span
@@ -297,16 +299,16 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
                 <button
                   onClick={togglePlay}
-                  className="w-16 h-16 flex items-center justify-center rounded-full bg-[#006591] dark:bg-[#0ea5e9] text-white shadow-[0_12px_28px_rgba(14,165,233,0.4)] hover:scale-105 transition-all active:scale-95 cursor-pointer relative"
+                  className="w-16 h-16 flex items-center justify-center rounded-full bg-[#1DB954] text-black shadow-[0_8px_24px_rgba(29,185,84,0.4)] hover:bg-[#1ED760] hover:scale-105 transition-all active:scale-95 cursor-pointer relative"
                   title={isPlaying ? 'Pause' : 'Play'}
                 >
                   {isBuffering ? (
-                    <span className="material-symbols-outlined text-[32px] animate-spin">
+                    <span className="material-symbols-outlined text-[32px] animate-spin text-black">
                       progress_activity
                     </span>
                   ) : (
                     <span
-                      className="material-symbols-outlined text-[40px]"
+                      className="material-symbols-outlined text-[40px] text-black"
                       style={{ fontVariationSettings: "'FILL' 1" }}
                     >
                       {isPlaying ? 'pause' : 'play_arrow'}
@@ -316,7 +318,7 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
                 <button
                   onClick={nextTrack}
-                  className="w-12 h-12 flex items-center justify-center rounded-full text-[#006591] dark:text-[#38bdf8] hover:bg-[#0ea5e9]/15 transition-all active:scale-90 cursor-pointer"
+                  className="w-12 h-12 flex items-center justify-center rounded-full text-white hover:text-[#1DB954] hover:bg-[#282828] transition-all active:scale-90 cursor-pointer"
                   title="Next Track"
                 >
                   <span
@@ -329,7 +331,7 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
                 <button
                   onClick={() => skipForward(10)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full text-[#3e4850] dark:text-slate-400 hover:bg-[#0ea5e9]/15 transition-all active:scale-90 cursor-pointer"
+                  className="w-10 h-10 flex items-center justify-center rounded-full text-[#B3B3B3] hover:text-white hover:bg-[#282828] transition-all active:scale-90 cursor-pointer"
                   title="Forward 10s"
                 >
                   <span className="material-symbols-outlined text-[22px]">forward_10</span>
@@ -340,8 +342,8 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                 onClick={toggleRepeat}
                 className={`w-11 h-11 flex items-center justify-center rounded-full transition-all cursor-pointer ${
                   isRepeat
-                    ? 'text-[#0ea5e9] bg-[#0ea5e9]/15'
-                    : 'text-[#3e4850] dark:text-slate-400 hover:bg-[#e0e9ef] dark:hover:bg-slate-800'
+                    ? 'text-[#1DB954] bg-[#1DB954]/15'
+                    : 'text-[#B3B3B3] hover:text-white hover:bg-[#282828]'
                 }`}
                 title="Repeat"
               >
@@ -353,17 +355,17 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
         {/* Lyrics Tab */}
         {activeTab === 'lyrics' && (
-          <div className="w-full max-w-[520px] bg-white/80 dark:bg-slate-900/80 p-6 md:p-8 rounded-[32px] shadow-xl border border-white/60 dark:border-white/10 flex flex-col gap-6 animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-[#bec8d2]/30 pb-4">
+          <div className="w-full max-w-[520px] bg-[#181818] p-6 md:p-8 rounded-[32px] shadow-2xl border border-[#282828] flex flex-col gap-6 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-[#282828] pb-4">
               <div>
-                <h2 className="text-xl font-bold text-[#006591] dark:text-[#38bdf8]">
+                <h2 className="text-xl font-bold text-[#1DB954]">
                   Song Lyrics & Insights
                 </h2>
-                <p className="text-xs text-[#3e4850] dark:text-slate-400">
+                <p className="text-xs text-[#B3B3B3]">
                   {currentTrack.title} — {currentTrack.artist}
                 </p>
               </div>
-              <span className="material-symbols-outlined text-[#0ea5e9]">subtitles</span>
+              <span className="material-symbols-outlined text-[#1DB954]">subtitles</span>
             </div>
 
             <div className="max-h-[360px] overflow-y-auto space-y-4 text-center px-2 py-4">
@@ -373,16 +375,16 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                     key={idx}
                     className={`text-base md:text-lg font-medium transition-all ${
                       idx === 2
-                        ? 'text-[#006591] dark:text-[#38bdf8] font-bold text-xl scale-105'
-                        : 'text-[#3e4850] dark:text-slate-300 opacity-80'
+                        ? 'text-[#1DB954] font-bold text-xl scale-105'
+                        : 'text-[#B3B3B3] opacity-80'
                     }`}
                   >
                     {line.replace(/\[\d+:\d+\.\d+\]/, '')}
                   </p>
                 ))
               ) : (
-                <div className="py-12 text-[#3e4850] dark:text-slate-400">
-                  <span className="material-symbols-outlined text-4xl mb-2 text-[#0ea5e9]">
+                <div className="py-12 text-[#B3B3B3]">
+                  <span className="material-symbols-outlined text-4xl mb-2 text-[#1DB954]">
                     graphic_eq
                   </span>
                   <p className="text-sm font-semibold">
@@ -396,11 +398,11 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
 
         {/* Up Next Queue Tab */}
         {activeTab === 'queue' && (
-          <div className="w-full max-w-[520px] bg-white/80 dark:bg-slate-900/80 p-6 rounded-[32px] shadow-xl border border-white/60 dark:border-white/10 animate-fadeIn">
-            <h2 className="text-xl font-bold text-[#141d21] dark:text-white mb-4 flex items-center justify-between">
+          <div className="w-full max-w-[520px] bg-[#181818] p-6 rounded-[32px] shadow-2xl border border-[#282828] animate-fadeIn">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center justify-between">
               <span>Up Next</span>
               <div className="flex items-center gap-3">
-                <span className="text-xs text-[#006591] dark:text-[#38bdf8] font-semibold">
+                <span className="text-xs text-[#1DB954] font-semibold">
                   {queue.length} Tracks
                 </span>
                 {queue.length > 1 && (
@@ -423,11 +425,11 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                     onClick={() => playTrack(track)}
                     className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all ${
                       isSelected
-                        ? 'bg-[#006591]/15 text-[#006591] dark:text-[#38bdf8] font-bold border border-[#0ea5e9]/30'
-                        : 'hover:bg-[#e0e9ef] dark:hover:bg-slate-800 text-[#141d21] dark:text-slate-200'
+                        ? 'bg-[#282828] text-[#1DB954] font-bold border border-[#1DB954]/30'
+                        : 'hover:bg-[#282828] text-white'
                     }`}
                   >
-                    <span className="text-xs font-mono w-5 text-center text-[#3e4850] dark:text-slate-400">
+                    <span className="text-xs font-mono w-5 text-center text-[#B3B3B3]">
                       {i + 1}
                     </span>
                     <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
@@ -438,12 +440,12 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                       />
                     </div>
                     <div className="flex-grow min-w-0">
-                      <p className="text-sm font-semibold truncate">{track.title}</p>
-                      <p className="text-xs opacity-75 truncate">{track.artist}</p>
+                      <p className="text-sm font-semibold truncate text-white">{track.title}</p>
+                      <p className="text-xs text-[#B3B3B3] truncate">{track.artist}</p>
                     </div>
                     {isSelected ? (
                       <span
-                        className="material-symbols-outlined text-[#006591] dark:text-[#38bdf8]"
+                        className="material-symbols-outlined text-[#1DB954]"
                         style={{ fontVariationSettings: "'FILL' 1" }}
                       >
                         equalizer
@@ -454,7 +456,7 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                           e.stopPropagation();
                           removeFromQueue(track.id);
                         }}
-                        className="material-symbols-outlined text-sm text-[#3e4850] dark:text-slate-400 hover:text-red-500 p-1"
+                        className="material-symbols-outlined text-sm text-[#B3B3B3] hover:text-red-500 p-1"
                         title="Remove from queue"
                       >
                         close
@@ -469,31 +471,31 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
       </main>
 
       {/* Navigation Footer */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border-t border-[#bec8d2]/30 dark:border-slate-800 shadow-lg">
+      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-[#121212] backdrop-blur-2xl border-t border-[#282828] shadow-lg">
         <button
           onClick={() => onNavigate('home', 'none')}
-          className="flex flex-col items-center justify-center text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8] transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined">home</span>
           <span className="text-xs font-medium mt-0.5">Home</span>
         </button>
         <button
           onClick={() => onNavigate('search', 'none')}
-          className="flex flex-col items-center justify-center text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8] transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined">search</span>
           <span className="text-xs font-medium mt-0.5">Search</span>
         </button>
         <button
           onClick={() => onNavigate('library', 'none')}
-          className="flex flex-col items-center justify-center text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8] transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined">library_music</span>
           <span className="text-xs font-medium mt-0.5">Library</span>
         </button>
         <button
           onClick={() => onNavigate('settings', 'push')}
-          className="flex flex-col items-center justify-center text-[#3e4850] dark:text-slate-400 hover:text-[#006591] dark:hover:text-[#38bdf8] transition-all cursor-pointer"
+          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
         >
           <span className="material-symbols-outlined">workspace_premium</span>
           <span className="text-xs font-medium mt-0.5">Premium</span>
