@@ -4,6 +4,7 @@ import { BottomNav } from './Navigation';
 import { CATEGORIES, IMAGINE_DRAGONS_ARTIST, USER_PROFILE } from '../data';
 import { MusicApiService } from '../services/musicApiService';
 import { useAudio } from '../context/AudioContext';
+import { SongActionMenuModal } from './SongActionMenuModal';
 
 interface SearchExplorerScreenProps {
   initialSearchQuery?: string;
@@ -38,6 +39,7 @@ export const SearchExplorerScreen: React.FC<SearchExplorerScreenProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isLoadingTrending, setIsLoadingTrending] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [activeSongForMenu, setActiveSongForMenu] = useState<Track | null>(null);
 
   const executeSearch = useCallback(async (query: string) => {
     if (!query || !query.trim()) {
@@ -316,12 +318,12 @@ export const SearchExplorerScreen: React.FC<SearchExplorerScreenProps> = ({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              addToQueue(track);
+                              setActiveSongForMenu(track);
                             }}
                             className="material-symbols-outlined text-[#B3B3B3] hover:text-white transition-colors p-2"
-                            title="Add to Queue"
+                            title="Song Options"
                           >
-                            playlist_add
+                            more_vert
                           </button>
                           <button
                             onClick={(e) => {
@@ -534,6 +536,14 @@ export const SearchExplorerScreen: React.FC<SearchExplorerScreenProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Song Action Menu Modal */}
+      {activeSongForMenu && (
+        <SongActionMenuModal
+          track={activeSongForMenu}
+          onClose={() => setActiveSongForMenu(null)}
+        />
+      )}
 
       <BottomNav currentScreen="search" onNavigate={onNavigate} />
     </div>

@@ -18,7 +18,7 @@ export const getApiBaseUrl = (): string => {
     }
   ).env;
 
-  // Allow an environment variable to override the backend URL
+  // Allow explicit override via environment variable
   if (metaEnv?.VITE_API_BASE_URL) {
     return metaEnv.VITE_API_BASE_URL.replace(/\/$/, '');
   }
@@ -31,11 +31,19 @@ export const getApiBaseUrl = (): string => {
     return 'https://raaga-backend-deployment.onrender.com';
   }
 
-  // Local web development
+  // Local web development -> default to local Spring Boot (http://localhost:8080) if on localhost
+  if (
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ) {
+    return 'http://localhost:8080';
+  }
+
+  // Deployed production fallback
   return 'https://raaga-backend-deployment.onrender.com';
 };
 
-export const API_BASE_URL = getApiBaseUrl();
+export let API_BASE_URL = getApiBaseUrl();
 
 /**
  * Convert Spring Boot SongDTO -> Frontend Track
@@ -44,19 +52,19 @@ export const mapSongDtoToTrack = (dto: SongDTO): Track => {
   return {
     id: dto.id || String(Math.random()),
 
-    title: dto.name || 'Untitled Track',
+    title: dto.name || dto.title || 'Untitled Track',
 
     artist: dto.artist || 'Unknown Artist',
 
-    album: dto.language
-      ? `${dto.language} Album`
-      : 'Single',
+    album: dto.album || (dto.language ? `${dto.language} Album` : 'Single'),
 
     coverUrl:
+      dto.artworkUrl ||
       dto.imageUrl ||
+      (dto as any).artwork ||
       'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=60',
 
-    audioUrl: dto.audioUrl || '',
+    audioUrl: dto.streamUrl || dto.audioUrl || '',
 
     duration: dto.duration || 180,
 
@@ -74,7 +82,7 @@ export class MusicApiService {
   /**
    * Search songs
    *
-   * GET /api/music/search?query=Kesariya
+   * GET /api/v1/music/search?q=Kesariya
    */
   static async searchSongs(
     query: string,
@@ -88,7 +96,7 @@ export class MusicApiService {
     const cleanQuery = encodeURIComponent(query.trim());
 
     const url =
-      `${API_BASE_URL}/api/music/search?query=${cleanQuery}`;
+      `${API_BASE_URL}/api/v1/music/search?q=${cleanQuery}`;
 
     console.log(
       '[MusicApiService] Searching:',
@@ -141,7 +149,7 @@ export class MusicApiService {
   /**
    * Get one song by ID
    *
-   * GET /api/music/song/{id}
+   * GET /api/v1/music/track/{id}
    */
   static async getSongById(
     id: string,
@@ -149,7 +157,7 @@ export class MusicApiService {
   ): Promise<Track | null> {
 
     const url =
-      `${API_BASE_URL}/api/music/song/${encodeURIComponent(id)}`;
+      `${API_BASE_URL}/api/v1/music/track/${encodeURIComponent(id)}`;
 
     try {
 
@@ -188,14 +196,12 @@ export class MusicApiService {
   }
 
   /**
-   * Check Spring Boot backend
+   * Check Spring Boot backend health (with automatic fallback from localhost to Render if local is offline)
    *
    * GET /api/music/test
    */
   static async checkHealth(): Promise<boolean> {
-
     try {
-
       const response = await fetch(
         `${API_BASE_URL}/api/music/test`,
         {
@@ -206,16 +212,159 @@ export class MusicApiService {
         }
       );
 
-      return response.ok;
-
+      if (response.ok) return true;
     } catch (error) {
-
       console.warn(
-        '[MusicApiService] Java backend unreachable:',
+        `[MusicApiService] Backend at ${API_BASE_URL} unreachable:`,
         error
       );
+    }
 
+    // Fallback: If local backend was tried and failed, attempt production Render backend
+    if (API_BASE_URL.includes('localhost') || API_BASE_URL.includes('127.0.0.1')) {
+      const fallbackUrl = 'https://raaga-backend-deployment.onrender.com';
+      try {
+        console.log(`[MusicApiService] Attempting fallback to ${fallbackUrl}...`);
+        const response = await fetch(`${fallbackUrl}/api/music/test`, {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        });
+        if (response.ok) {
+          API_BASE_URL = fallbackUrl;
+          console.log(`[MusicApiService] Switched API_BASE_URL to ${fallbackUrl}`);
+          return true;
+        }
+      } catch (fallbackErr) {
+        console.warn('[MusicApiService] Fallback backend unreachable:', fallbackErr);
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * Check Supabase PostgreSQL Database connectivity via Java Spring Boot
+   *
+   * GET /api/music/db-check
+   */
+  static async checkDb(): Promise<string> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/music/db-check`, {
+        method: 'GET',
+        headers: { Accept: 'text/plain, application/json' },
+      });
+      return await response.text();
+    } catch (error: any) {
+      return `❌ Database check failed: ${error?.message || 'Unreachable'}`;
+    }
+  }
+
+  /**
+   * Fetch Google OAuth consent URL from Java Spring Boot Auth service
+   *
+   * GET /api/auth/google/url
+   */
+  static async getGoogleAuthUrl(redirectUri?: string): Promise<string | null> {
+    try {
+      const uriParam = redirectUri ? `?redirectUri=${encodeURIComponent(redirectUri)}` : '';
+      const response = await fetch(`${API_BASE_URL}/api/auth/google/url${uriParam}`);
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data?.url || null;
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to fetch Google Auth URL:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Get user liked songs from Supabase PostgreSQL
+   * GET /api/library/liked-songs
+   */
+  static async getLikedSongs(userId = 'user_default'): Promise<Track[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/library/liked-songs?userId=${encodeURIComponent(userId)}`);
+      if (!response.ok) return [];
+      const data = await response.json();
+      return data.map((item: any) => ({
+        id: item.trackId || item.id,
+        title: item.title || 'Untitled Track',
+        artist: item.artist || 'Unknown Artist',
+        album: 'Liked Songs',
+        coverUrl: item.artworkUrl || 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=60',
+        audioUrl: item.streamUrl || '',
+        duration: item.duration || 180,
+        genre: 'Music',
+        isFavorite: true,
+      }));
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to fetch liked songs from Supabase:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Toggle liked song in Supabase PostgreSQL
+   * POST /api/library/liked-songs
+   */
+  static async toggleLikedSong(track: Track, userId = 'user_default'): Promise<boolean> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/library/liked-songs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          trackId: track.id,
+          title: track.title,
+          artist: track.artist,
+          artworkUrl: track.coverUrl,
+          streamUrl: track.audioUrl,
+          duration: track.duration,
+        }),
+      });
+      return response.ok;
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to toggle liked song in Supabase:', e);
       return false;
+    }
+  }
+
+  /**
+   * Fetch user playlists from Supabase PostgreSQL
+   * GET /api/library/playlists
+   */
+  static async getPlaylists(userId = 'user_default'): Promise<any[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/library/playlists?userId=${encodeURIComponent(userId)}`);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to fetch playlists from Supabase:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Create playlist in Supabase PostgreSQL
+   * POST /api/library/playlists
+   */
+  static async createPlaylist(title: string, description?: string, userId = 'user_default'): Promise<any | null> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/library/playlists`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          title,
+          description: description || '',
+          coverUrl: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=60',
+        }),
+      });
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to create playlist in Supabase:', e);
+      return null;
     }
   }
 }
