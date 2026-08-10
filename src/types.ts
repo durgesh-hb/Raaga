@@ -11,12 +11,16 @@ export type TransitionType = 'push' | 'push_back' | 'slide_up' | 'none';
 
 export interface SongDTO {
   id: string;
-  name: string;
+  name?: string;
+  title?: string;
   artist: string;
-  imageUrl: string;
-  audioUrl: string;
+  album?: string;
+  imageUrl?: string;
+  artworkUrl?: string;
+  audioUrl?: string;
+  streamUrl?: string;
   duration: number;
-  language: string;
+  language?: string;
 }
 
 export interface Track {

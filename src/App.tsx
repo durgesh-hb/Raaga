@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ScreenType, TransitionType } from './types';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -11,6 +11,7 @@ import { SearchResultsScreen } from './components/SearchResultsScreen';
 import { FullPlayerScreen } from './components/FullPlayerScreen';
 import { SettingsScreen } from './components/SettingsScreen';
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler';
+import { supabase } from './services/supabaseClient';
 
 function AppContent() {
   // Navigation stack state preserving screen history
@@ -19,6 +20,27 @@ function AppContent() {
   const [searchQuery, setSearchQuery] = useState('Imagine Dragons');
   const { isDarkMode } = useTheme();
   const { showToast } = useAudio();
+
+  // Automatically navigate to Home page when Google OAuth redirect or active Supabase session is detected
+  useEffect(() => {
+    const hasOAuthHash = window.location.hash.includes('access_token=') || window.location.search.includes('code=');
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || session || hasOAuthHash) {
+        setScreenHistory(['home']);
+      }
+    });
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session || hasOAuthHash) {
+        setScreenHistory(['home']);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Root current screen is the last item on the navigation stack
   const currentScreen = screenHistory[screenHistory.length - 1] || 'home';

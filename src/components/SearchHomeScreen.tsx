@@ -4,6 +4,7 @@ import { BottomNav } from './Navigation';
 import { PLAYLISTS, TRACKS, USER_PROFILE } from '../data';
 import { MusicApiService } from '../services/musicApiService';
 import { useAudio } from '../context/AudioContext';
+import { SongActionMenuModal } from './SongActionMenuModal';
 
 interface SearchHomeScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;
@@ -31,6 +32,7 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [dynamicTracks, setDynamicTracks] = useState<Track[]>(TRACKS);
   const [isLoadingTracks, setIsLoadingTracks] = useState<boolean>(false);
+  const [activeSongForMenu, setActiveSongForMenu] = useState<Track | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -298,16 +300,16 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
                       {track.artist} • <span className="opacity-75">{track.album}</span>
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        addToQueue(track);
+                        setActiveSongForMenu(track);
                       }}
                       className="material-symbols-outlined text-[#B3B3B3] hover:text-white transition-colors p-2"
-                      title="Add to Queue"
+                      title="Song Options"
                     >
-                      playlist_add
+                      more_vert
                     </button>
                     <button
                       onClick={(e) => {
@@ -323,7 +325,7 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
                       onClick={(e) => {
                         e.stopPropagation();
                         if (isSelected) togglePlay();
-                        else playTrack(track, TRACKS);
+                        else playTrack(track, dynamicTracks);
                       }}
                       className="material-symbols-outlined text-[#1DB954] hover:text-[#1ED760] hover:scale-110 transition-all p-2"
                       style={{ fontVariationSettings: "'FILL' 1" }}
@@ -400,6 +402,14 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Song Action Menu Modal */}
+      {activeSongForMenu && (
+        <SongActionMenuModal
+          track={activeSongForMenu}
+          onClose={() => setActiveSongForMenu(null)}
+        />
+      )}
 
       <BottomNav currentScreen="home" onNavigate={onNavigate} />
     </div>
