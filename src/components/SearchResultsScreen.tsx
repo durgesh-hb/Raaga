@@ -47,8 +47,13 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
         setSearchResults(filtered.length > 0 ? filtered : TRACKS);
       }
     } catch (err: any) {
-      console.warn('Java API search error, using local dataset fallback', err);
-      setApiError('Java backend disconnected. Showing offline catalog.');
+      console.warn('Live Render API search notice:', err);
+      const isColdStart = err?.message?.includes('cold start') || err?.message?.includes('timeout') || err?.message?.includes('spinning up');
+      setApiError(
+        isColdStart
+          ? 'Live Render container is waking up from cold start. Showing catalog fallback while server warms up.'
+          : 'Live backend unreachable. Showing cached catalog.'
+      );
       const queryLower = query.toLowerCase();
       const filtered = TRACKS.filter(
         (t) =>

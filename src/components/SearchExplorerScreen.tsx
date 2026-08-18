@@ -59,8 +59,13 @@ export const SearchExplorerScreen: React.FC<SearchExplorerScreenProps> = ({
         setSearchResults([]);
       }
     } catch (err: any) {
-      console.warn('Java API search error:', err);
-      setApiError('Java backend disconnected. Search unavailable.');
+      console.warn('Live Render backend search error:', err);
+      const isColdStart = err?.message?.includes('cold start') || err?.message?.includes('timeout') || err?.message?.includes('spinning up');
+      setApiError(
+        isColdStart
+          ? 'Live Render container is waking up from cold start. Tap Retry in a few seconds.'
+          : 'Unable to connect to live Render backend. Tap Retry.'
+      );
       setSearchResults([]);
     } finally {
       setIsLoading(false);

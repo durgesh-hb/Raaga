@@ -260,9 +260,12 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
               Featured Tracks
             </h3>
             {isLoadingTracks && (
-              <span className="material-symbols-outlined text-[#1DB954] animate-spin text-sm">
-                progress_activity
-              </span>
+              <div className="flex items-center gap-2 text-xs font-semibold text-[#1DB954]">
+                <span className="material-symbols-outlined animate-spin text-sm">
+                  progress_activity
+                </span>
+                <span>Connecting live Render backend...</span>
+              </div>
             )}
           </div>
           <div className="space-y-3">
