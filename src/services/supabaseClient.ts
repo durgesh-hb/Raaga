@@ -4,7 +4,7 @@ import { App } from '@capacitor/app';
 
 const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
 const SUPABASE_URL = metaEnv?.VITE_SUPABASE_URL || 'https://toxmcpcnpfapplzpztit.supabase.co';
-const SUPABASE_ANON_KEY = metaEnv?.VITE_SUPABASE_ANON_KEY || '';
+const SUPABASE_ANON_KEY = metaEnv?.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 

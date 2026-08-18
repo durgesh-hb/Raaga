@@ -14,9 +14,9 @@ export default defineConfig(() => {
     server: {
       proxy: {
         '/api': {
-          target: 'http://localhost:8080',
+          target: 'https://raaga-backend-deployment-bwu1.onrender.com',
           changeOrigin: true,
-          secure: false,
+          secure: true,
         },
       },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.

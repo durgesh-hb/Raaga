@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { Track } from '../types';
 import { TRACKS } from '../data';
-import { MusicApiService } from '../services/musicApiService';
+import { MusicApiService, resolveAudioStreamUrl } from '../services/musicApiService';
 
 interface AudioContextType {
   currentTrack: Track;
@@ -182,14 +182,18 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (newQueue && newQueue.length > 0) {
       setQueue(newQueue);
     }
-    setCurrentTrack(track);
+
+    const resolvedStreamUrl = resolveAudioStreamUrl(track.audioUrl);
+    const updatedTrack = { ...track, audioUrl: resolvedStreamUrl };
+
+    setCurrentTrack(updatedTrack);
     setNetworkError(null);
     setIsBuffering(true);
     setPosition(0);
     setDuration(track.duration || 180);
 
     if (audioRef.current) {
-      audioRef.current.src = track.audioUrl;
+      audioRef.current.src = resolvedStreamUrl;
       audioRef.current.currentTime = 0;
       audioRef.current.playbackRate = playbackSpeed;
       audioRef.current
@@ -202,7 +206,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           console.warn('Audio play request failed:', err);
           setIsBuffering(false);
           setIsPlaying(false);
-          setNetworkError(`Unable to play stream from ${track.audioUrl}`);
+          setNetworkError('Unable to stream track. Render backend container may be warming up from cold start.');
+          showToast('Server warming up... Please retry in a moment.');
         });
     }
   };
@@ -215,8 +220,9 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setIsPlaying(false);
     } else {
       setNetworkError(null);
-      if (!audioRef.current.src || audioRef.current.src === window.location.href) {
-        audioRef.current.src = currentTrack.audioUrl;
+      const streamUrl = resolveAudioStreamUrl(currentTrack.audioUrl);
+      if (!audioRef.current.src || audioRef.current.src === window.location.href || audioRef.current.src !== streamUrl) {
+        audioRef.current.src = streamUrl;
       }
       audioRef.current.playbackRate = playbackSpeed;
       audioRef.current
@@ -226,7 +232,8 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         })
         .catch((err) => {
           console.warn('Playback resume failed:', err);
-          setNetworkError('Failed to start audio playback.');
+          setNetworkError('Connecting to live audio stream from Render...');
+          showToast('Connecting to stream...');
         });
     }
   };
