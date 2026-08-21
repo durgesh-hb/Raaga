@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { Playlist, PlaylistTrack, Track } from '../types';
 
 const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
 const SUPABASE_URL = metaEnv?.VITE_SUPABASE_URL || 'https://toxmcpcnpfapplzpztit.supabase.co';
@@ -175,7 +176,7 @@ export async function signOutCleanSupabase() {
 /**
  * 4. Create new Playlist in Supabase 'playlists' table
  */
-export async function createPlaylistSupabase(title: string, description: string = '') {
+export async function createPlaylist(title: string, description: string = ''): Promise<Playlist | null> {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || 'user_default';
   const coverUrl = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=60';
@@ -190,7 +191,8 @@ export async function createPlaylistSupabase(title: string, description: string 
         cover_url: coverUrl,
       },
     ])
-    .select();
+    .select()
+    .single();
 
   if (error) {
     console.warn('[SupabaseDB] Insert playlist error (falling back locally):', error.message);
@@ -204,13 +206,14 @@ export async function createPlaylistSupabase(title: string, description: string 
     };
   }
 
-  return data && data.length > 0 ? data[0] : null;
+  return data;
 }
+export const createPlaylistSupabase = createPlaylist;
 
 /**
- * 5. Fetch all Playlists for current user from Supabase
+ * 5. Fetch all Playlists for current user from Supabase (user_id = auth.uid())
  */
-export async function fetchPlaylistsSupabase() {
+export async function fetchUserPlaylists(): Promise<Playlist[]> {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || 'user_default';
 
@@ -227,11 +230,12 @@ export async function fetchPlaylistsSupabase() {
 
   return data || [];
 }
+export const fetchPlaylistsSupabase = fetchUserPlaylists;
 
 /**
  * 6. Delete Entire Playlist from Supabase 'playlists' & 'playlist_tracks' tables
  */
-export async function deletePlaylistSupabase(playlistId: string) {
+export async function deletePlaylist(playlistId: string): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id;
 
@@ -259,11 +263,12 @@ export async function deletePlaylistSupabase(playlistId: string) {
 
   return true;
 }
+export const deletePlaylistSupabase = deletePlaylist;
 
 /**
  * 7. Add a Song Track to a Playlist in Supabase 'playlist_tracks' table
  */
-export async function addTrackToPlaylistSupabase(playlistId: string, track: any) {
+export async function addSongToPlaylist(playlistId: string, track: Track): Promise<PlaylistTrack | null> {
   const { data, error } = await supabase
     .from('playlist_tracks')
     .insert([
@@ -272,25 +277,27 @@ export async function addTrackToPlaylistSupabase(playlistId: string, track: any)
         track_id: track.id,
         title: track.title,
         artist: track.artist,
-        artwork_url: track.coverUrl || track.artworkUrl || track.imageUrl || '',
+        artwork_url: track.coverUrl || '',
         duration: track.duration || 180,
-        stream_url: track.audioUrl || track.streamUrl || '',
+        stream_url: track.audioUrl || '',
       },
     ])
-    .select();
+    .select()
+    .single();
 
   if (error) {
-    console.warn('[SupabaseDB] Add track to playlist error:', error.message);
+    console.warn('[SupabaseDB] Add song to playlist error:', error.message);
     throw new Error(error.message);
   }
 
-  return data && data.length > 0 ? data[0] : null;
+  return data;
 }
+export const addTrackToPlaylistSupabase = addSongToPlaylist;
 
 /**
  * 8. Remove a Song Track from a Playlist in Supabase 'playlist_tracks' table
  */
-export async function removeTrackFromPlaylistSupabase(playlistId: string, trackId: string) {
+export async function removeSongFromPlaylist(playlistId: string, trackId: string): Promise<boolean> {
   const { error } = await supabase
     .from('playlist_tracks')
     .delete()
@@ -298,17 +305,18 @@ export async function removeTrackFromPlaylistSupabase(playlistId: string, trackI
     .eq('track_id', trackId);
 
   if (error) {
-    console.warn('[SupabaseDB] Remove track from playlist error:', error.message);
+    console.warn('[SupabaseDB] Remove song from playlist error:', error.message);
     throw new Error(error.message);
   }
 
   return true;
 }
+export const removeTrackFromPlaylistSupabase = removeSongFromPlaylist;
 
 /**
  * 9. Dynamically fetch Saved Songs for a Playlist ID from 'playlist_tracks'
  */
-export async function fetchPlaylistTracksSupabase(playlistId: string) {
+export async function fetchPlaylistTracks(playlistId: string): Promise<Track[]> {
   const { data, error } = await supabase
     .from('playlist_tracks')
     .select('*')
@@ -332,3 +340,5 @@ export async function fetchPlaylistTracksSupabase(playlistId: string) {
     isFavorite: true,
   }));
 }
+export const fetchPlaylistTracksSupabase = fetchPlaylistTracks;
+

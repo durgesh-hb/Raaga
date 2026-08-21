@@ -38,11 +38,27 @@ export interface Track {
 
 export interface Playlist {
   id: string;
+  user_id?: string;
   title: string;
-  type: string;
-  songCount: number;
-  coverUrl: string;
+  description?: string;
+  cover_url?: string;
+  coverUrl?: string;
+  type?: string;
+  songCount?: number;
   tracks?: Track[];
+  created_at?: string;
+}
+
+export interface PlaylistTrack {
+  id?: string;
+  playlist_id: string;
+  track_id: string;
+  title: string;
+  artist: string;
+  artwork_url?: string;
+  stream_url?: string;
+  duration?: number;
+  created_at?: string;
 }
 
 export interface SearchCategory {
@@ -60,4 +76,5 @@ export interface UserProfile {
   isPremium: boolean;
   avatarUrl: string;
 }
+
 

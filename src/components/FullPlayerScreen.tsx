@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { ScreenType, TransitionType } from '../types';
+import { ScreenType, TransitionType, Track } from '../types';
+import { BottomNav } from './Navigation';
 import { useAudio } from '../context/AudioContext';
+import { SongActionMenuModal } from './SongActionMenuModal';
 
 interface FullPlayerScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;
@@ -38,8 +40,10 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
   const [activeTab, setActiveTab] = useState<'player' | 'lyrics' | 'queue'>('player');
   const [showVolumeBar, setShowVolumeBar] = useState<boolean>(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [activeSongForMenu, setActiveSongForMenu] = useState<Track | null>(null);
 
   const isFavorite = favorites.includes(currentTrack.id);
+
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -208,19 +212,28 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
                   {currentTrack.artist} • <span className="opacity-80">{currentTrack.album}</span>
                 </p>
               </div>
-              <button
-                onClick={() => toggleFavorite(currentTrack.id)}
-                className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-[#282828] transition-colors cursor-pointer flex-shrink-0 ${
-                  isFavorite ? 'text-[#1DB954]' : 'text-[#B3B3B3] hover:text-white'
-                }`}
-              >
-                <span
-                  className="material-symbols-outlined text-[30px]"
-                  style={isFavorite ? { fontVariationSettings: "'FILL' 1" } : {}}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => setActiveSongForMenu(currentTrack)}
+                  className="w-12 h-12 flex items-center justify-center rounded-full text-[#B3B3B3] hover:text-[#1DB954] hover:bg-[#282828] transition-colors cursor-pointer"
+                  title="Add to Playlist / Song Options"
                 >
-                  {isFavorite ? 'favorite' : 'favorite_border'}
-                </span>
-              </button>
+                  <span className="material-symbols-outlined text-[28px]">playlist_add</span>
+                </button>
+                <button
+                  onClick={() => toggleFavorite(currentTrack.id)}
+                  className={`w-12 h-12 flex items-center justify-center rounded-full hover:bg-[#282828] transition-colors cursor-pointer ${
+                    isFavorite ? 'text-[#1DB954]' : 'text-[#B3B3B3] hover:text-white'
+                  }`}
+                >
+                  <span
+                    className="material-symbols-outlined text-[30px]"
+                    style={isFavorite ? { fontVariationSettings: "'FILL' 1" } : {}}
+                  >
+                    {isFavorite ? 'favorite' : 'favorite_border'}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Audio Progress Bar */}
@@ -471,36 +484,15 @@ export const FullPlayerScreen: React.FC<FullPlayerScreenProps> = ({ onNavigate }
       </main>
 
       {/* Navigation Footer */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center h-20 px-4 pb-safe bg-[#121212] backdrop-blur-2xl border-t border-[#282828] shadow-lg">
-        <button
-          onClick={() => onNavigate('home', 'none')}
-          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined">home</span>
-          <span className="text-xs font-medium mt-0.5">Home</span>
-        </button>
-        <button
-          onClick={() => onNavigate('search', 'none')}
-          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined">search</span>
-          <span className="text-xs font-medium mt-0.5">Search</span>
-        </button>
-        <button
-          onClick={() => onNavigate('library', 'none')}
-          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined">library_music</span>
-          <span className="text-xs font-medium mt-0.5">Library</span>
-        </button>
-        <button
-          onClick={() => onNavigate('settings', 'push')}
-          className="flex flex-col items-center justify-center text-[#B3B3B3] hover:text-white transition-all cursor-pointer"
-        >
-          <span className="material-symbols-outlined">workspace_premium</span>
-          <span className="text-xs font-medium mt-0.5">Premium</span>
-        </button>
-      </nav>
+      <BottomNav currentScreen="player" onNavigate={onNavigate} />
+
+      {/* Song Action Menu Modal */}
+      {activeSongForMenu && (
+        <SongActionMenuModal
+          track={activeSongForMenu}
+          onClose={() => setActiveSongForMenu(null)}
+        />
+      )}
     </div>
   );
 };

@@ -1,28 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScreenType, TransitionType, Track } from '../types';
+import { ScreenType, TransitionType, Track, Playlist } from '../types';
 import { BottomNav } from './Navigation';
 import { useAudio } from '../context/AudioContext';
 import { MusicApiService } from '../services/musicApiService';
 import { SongActionMenuModal } from './SongActionMenuModal';
 import {
-  createPlaylistSupabase,
-  fetchPlaylistsSupabase,
-  fetchPlaylistTracksSupabase,
-  deletePlaylistSupabase,
-  removeTrackFromPlaylistSupabase,
+  createPlaylist,
+  fetchUserPlaylists,
+  fetchPlaylistTracks,
+  deletePlaylist,
+  removeSongFromPlaylist,
 } from '../services/supabaseClient';
 
 interface YourLibraryScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;
-}
-
-interface PlaylistObj {
-  id: string;
-  title: string;
-  description?: string;
-  cover_url?: string;
-  user_id?: string;
-  created_at?: string;
 }
 
 export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate }) => {
@@ -39,11 +30,11 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   const [activeFilter, setActiveFilter] = useState<'playlists' | 'liked'>('playlists');
 
   // Supabase Database Playlists State
-  const [playlists, setPlaylists] = useState<PlaylistObj[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoadingPlaylists, setIsLoadingPlaylists] = useState<boolean>(true);
 
   // Selected Playlist Detail View State
-  const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistObj | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState<boolean>(false);
 
@@ -54,7 +45,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   const [isCreating, setIsCreating] = useState<boolean>(false);
 
   // Delete Entire Playlist Confirmation Modal State
-  const [playlistToDelete, setPlaylistToDelete] = useState<PlaylistObj | null>(null);
+  const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
   const [isDeletingPlaylist, setIsDeletingPlaylist] = useState<boolean>(false);
 
   // Song Action Menu Modal State
@@ -69,7 +60,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   const loadPlaylists = useCallback(async () => {
     setIsLoadingPlaylists(true);
     try {
-      const data = await fetchPlaylistsSupabase();
+      const data = await fetchUserPlaylists();
       if (data && data.length > 0) {
         setPlaylists(data);
       } else {
@@ -104,7 +95,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
 
     try {
       // Async Supabase DB insertion
-      const newPlaylist = await createPlaylistSupabase(title, desc);
+      const newPlaylist = await createPlaylist(title, desc);
 
       if (newPlaylist) {
         // Update local frontend state dynamically
@@ -128,14 +119,14 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   // -------------------------------------------------------------
   // 3. FETCH SONGS FOR SELECTED PLAYLIST
   // -------------------------------------------------------------
-  const openPlaylistDetails = async (playlist: PlaylistObj) => {
+  const openPlaylistDetails = async (playlist: Playlist) => {
     setSelectedPlaylist(playlist);
     setIsLoadingTracks(true);
     setPlaylistTracks([]);
 
     try {
       // Fetch tracks linked to playlist_id from Supabase
-      const savedTracks = await fetchPlaylistTracksSupabase(playlist.id);
+      const savedTracks = await fetchPlaylistTracks(playlist.id);
 
       if (savedTracks && savedTracks.length > 0) {
         setPlaylistTracks(savedTracks);
@@ -160,7 +151,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
 
     try {
       // Delete entry from Supabase playlist_tracks matching playlist_id and track_id
-      await removeTrackFromPlaylistSupabase(selectedPlaylist.id, trackId);
+      await removeSongFromPlaylist(selectedPlaylist.id, trackId);
 
       // Instantly update local frontend UI state
       setPlaylistTracks((prev) => prev.filter((t) => t.id !== trackId));
@@ -185,7 +176,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
 
     try {
       // Execute deletion from Supabase DB
-      await deletePlaylistSupabase(targetId);
+      await deletePlaylist(targetId);
 
       // Update local state, clear selected playlist & navigate back to Library root
       setPlaylists((prev) => prev.filter((pl) => pl.id !== targetId));
@@ -207,6 +198,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
       setIsDeletingPlaylist(false);
     }
   };
+
 
   return (
     <div className="bg-[#121212] text-white min-h-screen pb-40 transition-colors duration-300 font-sans">

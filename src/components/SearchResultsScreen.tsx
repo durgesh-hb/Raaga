@@ -4,6 +4,7 @@ import { BottomNav } from './Navigation';
 import { IMAGINE_DRAGONS_ARTIST, TRACKS, USER_PROFILE } from '../data';
 import { MusicApiService } from '../services/musicApiService';
 import { useAudio } from '../context/AudioContext';
+import { SongActionMenuModal } from './SongActionMenuModal';
 
 interface SearchResultsScreenProps {
   initialSearchQuery?: string;
@@ -20,6 +21,8 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
   const [searchResults, setSearchResults] = useState<Track[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [activeSongForMenu, setActiveSongForMenu] = useState<Track | null>(null);
+
 
   const executeSearch = useCallback(async (query: string) => {
     if (!query || !query.trim()) {
@@ -277,6 +280,16 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          setActiveSongForMenu(track);
+                        }}
+                        className="material-symbols-outlined text-[#B3B3B3] hover:text-white transition-colors p-2"
+                        title="Song Options"
+                      >
+                        more_vert
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
                           addToQueue(track);
                         }}
                         className="material-symbols-outlined text-[#B3B3B3] hover:text-white transition-colors p-2"
@@ -349,6 +362,14 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Song Action Menu Modal */}
+      {activeSongForMenu && (
+        <SongActionMenuModal
+          track={activeSongForMenu}
+          onClose={() => setActiveSongForMenu(null)}
+        />
+      )}
 
       <BottomNav currentScreen="results" onNavigate={onNavigate} />
     </div>
