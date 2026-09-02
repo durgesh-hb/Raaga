@@ -5,7 +5,7 @@ import { Playlist, PlaylistTrack, Track } from '../types';
 
 const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
 const SUPABASE_URL = metaEnv?.VITE_SUPABASE_URL || 'https://toxmcpcnpfapplzpztit.supabase.co';
-const SUPABASE_ANON_KEY = metaEnv?.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const SUPABASE_ANON_KEY = metaEnv?.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -14,10 +14,10 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
  */
 export async function signInWithGoogleSupabase() {
   const isNative = Capacitor.isNativePlatform();
-  
+
   // Mobile deep links (raaga://login-callback or com.ragga.stream://auth-callback) vs Web window origin
-  const redirectTo = isNative 
-    ? 'raaga://login-callback' 
+  const redirectTo = isNative
+    ? 'raaga://login-callback'
     : `${window.location.origin}`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
