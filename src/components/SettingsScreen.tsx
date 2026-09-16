@@ -4,6 +4,7 @@ import { ScreenType, TransitionType } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAudio } from '../context/AudioContext';
 import { supabase, upsertUserProfile, signOutCleanSupabase } from '../services/supabaseClient';
+import { OnboardingModal } from './OnboardingModal';
 
 interface SettingsScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;
@@ -21,6 +22,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
 
   // UI Control States
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [newDisplayName, setNewDisplayName] = useState<string>('');
   const [isSavingProfile, setIsSavingProfile] = useState<boolean>(false);
   const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
@@ -98,9 +100,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isEditModalOpen]);
 
-  // -------------------------------------------------------------
-  // 2. SAVE INLINE / MODAL DISPLAY NAME TO SUPABASE & PROFILES
-  // -------------------------------------------------------------
+  // Save profile display name
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDisplayName.trim()) return;
@@ -109,7 +109,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
     const updatedName = newDisplayName.trim();
 
     try {
-      // 1. Update Supabase Auth user metadata
       const { data, error } = await supabase.auth.updateUser({
         data: { full_name: updatedName },
       });
@@ -119,8 +118,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
         showToast?.('Failed to update profile. Please try again.');
       } else {
         setDisplayName(updatedName);
-
-        // 2. Persist update directly into public.profiles table
         if (data?.user) {
           await upsertUserProfile(data.user);
         } else if (userId) {
@@ -132,7 +129,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
               updated_at: new Date().toISOString(),
             }, { onConflict: 'id' });
         }
-
         setIsEditModalOpen(false);
         showToast?.('Profile display name updated successfully!');
       }
@@ -146,9 +142,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
     }
   };
 
-  // -------------------------------------------------------------
-  // 3. CLEAN LOG OUT ACTION
-  // -------------------------------------------------------------
+  // Logout action
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -162,7 +156,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
     }
   };
 
-  // Avatar Initials Fallback
   const getInitials = (name: string) => {
     if (!name) return 'R';
     const parts = name.trim().split(' ');
@@ -198,14 +191,11 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
       {/* Main Settings Container */}
       <main className="max-w-2xl mx-auto px-4 md:px-6 py-6 space-y-6">
 
-        {/* ========================================================= */}
-        {/* CONTROL 1: USER PROFILE CARD (Google OAuth Auto-Fetched) */}
-        {/* ========================================================= */}
+        {/* User Profile Card */}
         <section className="bg-[#181818] border border-[#282828] rounded-3xl p-6 shadow-xl relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-[#1DB954]/5 rounded-full blur-3xl pointer-events-none" />
 
           <div className="flex flex-col sm:flex-row items-center gap-5 relative z-10">
-            {/* User Avatar Image or Fallback Initials */}
             <div className="relative group flex-shrink-0">
               {avatarUrl ? (
                 <img
@@ -223,7 +213,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
               </div>
             </div>
 
-            {/* User Info Details */}
             <div className="flex-1 text-center sm:text-left space-y-1">
               <div className="flex items-center justify-center sm:justify-start gap-2">
                 <h2 className="text-xl font-extrabold text-white tracking-tight">
@@ -243,7 +232,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
               )}
             </div>
 
-            {/* Edit Profile Button */}
             <button
               onClick={() => {
                 setNewDisplayName(displayName);
@@ -257,9 +245,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
           </div>
         </section>
 
-        {/* ========================================================= */}
-        {/* CONTROL 2: DYNAMIC LIGHT / DARK MODE SWITCH              */}
-        {/* ========================================================= */}
+        {/* Recommendation & Music Preferences Control */}
+        <section className="bg-[#181818] border border-[#282828] rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 className="text-xs uppercase font-extrabold tracking-widest text-[#B3B3B3] font-mono">
+            Personalized Music Feed
+          </h3>
+
+          <div className="flex items-center justify-between p-3.5 bg-[#121212] rounded-2xl border border-[#282828]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#1DB954]/20 flex items-center justify-center text-[#1DB954]">
+                <span className="material-symbols-outlined text-2xl">auto_awesome</span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white">Music Onboarding & Recommendations</p>
+                <p className="text-xs text-[#B3B3B3]">
+                  Update your preferred languages, favorite artists & vibes
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsOnboardingOpen(true)}
+              className="px-4 py-2 bg-[#1DB954] hover:bg-[#1ed760] text-black text-xs font-extrabold rounded-xl transition-all cursor-pointer shadow-md hover:scale-105 active:scale-95"
+            >
+              Update Preferences
+            </button>
+          </div>
+        </section>
+
+        {/* Appearance Control */}
         <section className="bg-[#181818] border border-[#282828] rounded-3xl p-6 shadow-xl space-y-4">
           <h3 className="text-xs uppercase font-extrabold tracking-widest text-[#B3B3B3] font-mono">
             App Appearance
@@ -280,26 +294,21 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
               </div>
             </div>
 
-            {/* Theme Toggle Button */}
             <button
               onClick={toggleTheme}
-              className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 cursor-pointer ${
-                isDarkMode ? 'bg-[#1DB954]' : 'bg-[#3E3E3E]'
-              }`}
+              className={`w-14 h-8 rounded-full p-1 transition-colors duration-300 cursor-pointer ${isDarkMode ? 'bg-[#1DB954]' : 'bg-[#3E3E3E]'
+                }`}
               aria-label="Toggle Theme"
             >
               <div
-                className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ${
-                  isDarkMode ? 'translate-x-6' : 'translate-x-0'
-                }`}
+                className={`w-6 h-6 rounded-full bg-white shadow-md transform transition-transform duration-300 ${isDarkMode ? 'translate-x-6' : 'translate-x-0'
+                  }`}
               />
             </button>
           </div>
         </section>
 
-        {/* ========================================================= */}
-        {/* CONTROL 3: CLEAN LOG OUT BUTTON                          */}
-        {/* ========================================================= */}
+        {/* Logout Control */}
         <section className="bg-[#181818] border border-[#282828] rounded-3xl p-6 shadow-xl space-y-4">
           <h3 className="text-xs uppercase font-extrabold tracking-widest text-[#B3B3B3] font-mono">
             Session Controls
@@ -317,9 +326,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
 
       </main>
 
-      {/* ========================================================= */}
-      {/* INLINE / MODAL DISPLAY NAME EDITING FLOW                 */}
-      {/* ========================================================= */}
+      {/* Profile Edit Modal */}
       <AnimatePresence>
         {isEditModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
@@ -330,7 +337,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="w-full max-w-md bg-[#181818] border border-[#282828] rounded-3xl p-6 shadow-2xl space-y-6"
             >
-              {/* Modal Header */}
               <div className="flex justify-between items-center border-b border-[#282828] pb-4">
                 <div className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[#1DB954]">edit_note</span>
@@ -344,7 +350,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
                 </button>
               </div>
 
-              {/* Edit Form */}
               <form onSubmit={handleSaveProfile} className="space-y-4">
                 <div className="space-y-2">
                   <label className="text-xs font-extrabold text-[#B3B3B3] uppercase tracking-wider font-mono">
@@ -375,7 +380,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
                   </p>
                 </div>
 
-                {/* Modal Buttons */}
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
@@ -397,6 +401,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onNavigate }) =>
           </div>
         )}
       </AnimatePresence>
+
+      {/* Onboarding Preference Selector Modal */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onSaved={() => showToast?.('Updated music preferences!')}
+      />
     </div>
   );
 };

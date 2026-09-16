@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useRef, useEffect } from 'r
 import { Track } from '../types';
 import { TRACKS } from '../data';
 import { MusicApiService, resolveAudioStreamUrl } from '../services/musicApiService';
+import { supabase } from '../services/supabaseClient';
 
 interface AudioContextType {
   currentTrack: Track;
@@ -17,6 +18,7 @@ interface AudioContextType {
   networkError: string | null;
   playbackSpeed: number;
   toastMessage: string | null;
+  userId: string;
   playTrack: (track: Track, newQueue?: Track[]) => void;
   togglePlay: () => void;
   seek: (timeInSeconds: number) => void;
@@ -53,8 +55,31 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [playbackSpeed, setPlaybackSpeedState] = useState<number>(1.0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>('user_default');
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const hasLogged30sRef = useRef<boolean>(false);
+  const currentTrackRef = useRef<Track>(TRACKS[0]);
+  currentTrackRef.current = currentTrack;
+
+  // Auto-fetch Supabase User ID for recommendation tracking
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.id) {
+        setUserId(user.id);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Dynamic initial queue fetch from Spring Boot backend API
   useEffect(() => {
@@ -81,6 +106,25 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTimeout(() => {
       setToastMessage((current) => (current === msg ? null : current));
     }, 2500);
+  };
+
+  // Helper to safely record listening event to backend
+  const recordEvent = (action: 'PLAY' | 'PLAY_30S' | 'PAUSE' | 'SKIP' | 'EARLY_SKIP' | 'COMPLETE' | 'LIKE' | 'REPLAY' | 'ADD_TO_PLAYLIST', customTrack?: Track, playedSecs?: number, completed = false) => {
+    const target = customTrack || currentTrackRef.current;
+    if (!target || !target.id) return;
+
+    MusicApiService.recordListeningEvent({
+      userId,
+      trackId: target.id,
+      title: target.title,
+      artist: target.artist,
+      language: target.genre || target.language || 'Hindi',
+      genre: target.genre || 'Music',
+      playedSeconds: playedSecs !== undefined ? Math.round(playedSecs) : Math.round(audioRef.current?.currentTime || 0),
+      duration: target.duration || Math.round(duration),
+      completed,
+      action,
+    });
   };
 
   // Initialize Audio Element
@@ -110,16 +154,26 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     const handleTimeUpdate = () => {
-      setPosition(audio.currentTime);
+      const curTime = audio.currentTime;
+      setPosition(curTime);
       if (audio.duration && !isNaN(audio.duration)) {
         setDuration(audio.duration);
+      }
+
+      // Track > 30 seconds listening event once per track playback
+      if (curTime >= 30 && !hasLogged30sRef.current) {
+        hasLogged30sRef.current = true;
+        recordEvent('PLAY_30S', currentTrackRef.current, curTime, false);
       }
     };
 
     const handleEnded = () => {
       setIsPlaying(false);
+      recordEvent('COMPLETE', currentTrackRef.current, audio.duration || duration, true);
+
       if (isRepeat) {
         audio.currentTime = 0;
+        recordEvent('REPLAY', currentTrackRef.current, 0, false);
         audio.play().catch(console.warn);
       } else {
         handleNextTrackRef.current();
@@ -153,11 +207,19 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       audio.removeEventListener('error', handleError);
       audio.pause();
     };
-  }, []);
+  }, [userId, isRepeat]);
 
   const handleNextTrackRef = useRef<() => void>(() => {});
 
   const nextTrack = () => {
+    // Record Skip / Early skip event before track transition
+    const curPos = audioRef.current ? audioRef.current.currentTime : position;
+    if (curPos < 10) {
+      recordEvent('EARLY_SKIP', currentTrack, curPos, false);
+    } else if (curPos < (duration - 10)) {
+      recordEvent('SKIP', currentTrack, curPos, false);
+    }
+
     const currentIndex = queue.findIndex((t) => t.id === currentTrack.id);
     let nextIndex = 0;
     if (isShuffle) {
@@ -187,10 +249,15 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updatedTrack = { ...track, audioUrl: resolvedStreamUrl };
 
     setCurrentTrack(updatedTrack);
+    currentTrackRef.current = updatedTrack;
+    hasLogged30sRef.current = false;
+
     setNetworkError(null);
     setIsBuffering(true);
     setPosition(0);
     setDuration(track.duration || 180);
+
+    recordEvent('PLAY', updatedTrack, 0, false);
 
     if (audioRef.current) {
       audioRef.current.src = resolvedStreamUrl;
@@ -218,6 +285,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      recordEvent('PAUSE', currentTrack, audioRef.current.currentTime, false);
     } else {
       setNetworkError(null);
       const streamUrl = resolveAudioStreamUrl(currentTrack.audioUrl);
@@ -229,6 +297,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         .play()
         .then(() => {
           setIsPlaying(true);
+          recordEvent('PLAY', currentTrack, audioRef.current?.currentTime || 0, false);
         })
         .catch((err) => {
           console.warn('Playback resume failed:', err);
@@ -276,6 +345,13 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const isFav = prev.includes(trackId);
       const updated = isFav ? prev.filter((id) => id !== trackId) : [...prev, trackId];
       showToast(isFav ? 'Removed from Liked Songs' : 'Added to Liked Songs');
+
+      if (!isFav) {
+        const targetTrack = queue.find((t) => t.id === trackId) || currentTrack;
+        recordEvent('LIKE', targetTrack, 0, false);
+        MusicApiService.toggleLikedSong(targetTrack, userId);
+      }
+
       return updated;
     });
   };
@@ -300,6 +376,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (!queue.some((t) => t.id === track.id)) {
       setQueue((prev) => [...prev, track]);
       showToast(`Added "${track.title}" to Queue`);
+      recordEvent('ADD_TO_PLAYLIST', track, 0, false);
     } else {
       showToast(`"${track.title}" is already in Queue`);
     }
@@ -315,26 +392,21 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     showToast('Queue cleared');
   };
 
+  const clearError = () => setNetworkError(null);
+
   const loadDynamicQueue = async (query: string) => {
     try {
-      setIsBuffering(true);
-      const fetched = await MusicApiService.searchSongs(query);
-      if (fetched && fetched.length > 0) {
-        setQueue(fetched);
-        playTrack(fetched[0], fetched);
-        showToast(`Loaded songs for "${query}"`);
+      const fetchedTracks = await MusicApiService.searchSongs(query);
+      if (fetchedTracks && fetchedTracks.length > 0) {
+        playTrack(fetchedTracks[0], fetchedTracks);
+        showToast(`Loaded queue for "${query}"`);
       } else {
-        showToast(`No songs found for "${query}"`);
+        showToast(`No tracks found for "${query}"`);
       }
     } catch (err) {
-      console.warn('[AudioContext] loadDynamicQueue error:', err);
-      showToast('Backend unavailable');
-    } finally {
-      setIsBuffering(false);
+      console.warn('[AudioContext] Failed to load dynamic queue:', err);
     }
   };
-
-  const clearError = () => setNetworkError(null);
 
   return (
     <AudioContext.Provider
@@ -352,6 +424,7 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         networkError,
         playbackSpeed,
         toastMessage,
+        userId,
         playTrack,
         togglePlay,
         seek,
@@ -373,13 +446,6 @@ export const AudioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }}
     >
       {children}
-      {/* Global Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-20 right-6 z-[100] toast-animate bg-[#006591] dark:bg-[#0ea5e9] text-white text-xs font-extrabold px-4 py-2.5 rounded-full shadow-2xl backdrop-blur-lg flex items-center gap-2 border border-white/30">
-          <span className="material-symbols-outlined text-sm">info</span>
-          <span>{toastMessage}</span>
-        </div>
-      )}
     </AudioContext.Provider>
   );
 };

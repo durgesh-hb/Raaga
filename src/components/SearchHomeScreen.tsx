@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { ScreenType, TransitionType, Track } from '../types';
+import { ScreenType, TransitionType, Track, RecommendationSection } from '../types';
 import { BottomNav } from './Navigation';
 import { PLAYLISTS, TRACKS, USER_PROFILE } from '../data';
-import { MusicApiService } from '../services/musicApiService';
+import { MusicApiService, mapSongDtoToTrack } from '../services/musicApiService';
 import { useAudio } from '../context/AudioContext';
 import { SongActionMenuModal } from './SongActionMenuModal';
+import { OnboardingModal } from './OnboardingModal';
 
 interface SearchHomeScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;
@@ -27,16 +28,43 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
     favorites,
     toggleFavorite,
     addToQueue,
+    userId,
   } = useAudio();
 
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [dynamicTracks, setDynamicTracks] = useState<Track[]>(TRACKS);
+  const [recommendationSections, setRecommendationSections] = useState<RecommendationSection[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState<boolean>(false);
+  const [isLoadingRecs, setIsLoadingRecs] = useState<boolean>(true);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState<boolean>(false);
   const [activeSongForMenu, setActiveSongForMenu] = useState<Track | null>(null);
+
+  // Fetch Home Recommendations & Initial Tracks
+  const loadRecommendations = async () => {
+    setIsLoadingRecs(true);
+    try {
+      const recData = await MusicApiService.getHomeRecommendations(userId);
+      if (recData && recData.sections && recData.sections.length > 0) {
+        setRecommendationSections(recData.sections);
+        // Prompt onboarding for cold start if user has no preferences set
+        if (!recData.hasPreferences) {
+          setIsOnboardingOpen(true);
+        }
+      } else {
+        // Fallback: Prompt onboarding if no preferences found
+        setIsOnboardingOpen(true);
+      }
+    } catch (err) {
+      console.warn('Failed to load home recommendations:', err);
+    } finally {
+      setIsLoadingRecs(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
     setIsLoadingTracks(true);
+
     MusicApiService.searchSongs('Top Hindi Songs')
       .then((res) => {
         if (isMounted && res && res.length > 0) {
@@ -50,10 +78,12 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
         if (isMounted) setIsLoadingTracks(false);
       });
 
+    loadRecommendations();
+
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [userId]);
 
   const totalDuration = duration || currentTrack.duration || 180;
   const progressPercent = Math.min(100, Math.max(0, (position / totalDuration) * 100));
@@ -113,6 +143,15 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
 
         <div className="flex items-center gap-4">
           <button
+            onClick={() => setIsOnboardingOpen(true)}
+            className="hidden sm:flex items-center gap-1.5 bg-[#282828] hover:bg-[#333] text-[#1DB954] border border-[#1DB954]/30 px-3 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer"
+            title="Personalize Recommendations"
+          >
+            <span className="material-symbols-outlined text-sm">auto_awesome</span>
+            <span>Personalize</span>
+          </button>
+
+          <button
             onClick={() => onNavigate('settings', 'push')}
             className="material-symbols-outlined text-[#B3B3B3] hover:text-white hover:bg-[#282828] p-2 rounded-full transition-colors cursor-pointer"
             title="Settings"
@@ -134,7 +173,7 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
 
       <main className="max-w-7xl mx-auto px-4 md:px-10 mt-6">
         {/* Search Banner Input */}
-        <section className="mb-10">
+        <section className="mb-8">
           <h2 className="text-2xl md:text-3xl font-extrabold mb-4 text-white">
             Discover Music
           </h2>
@@ -169,6 +208,123 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
             </div>
           </form>
         </section>
+
+        {/* Personalized Recommendations Quick Banner */}
+        <section className="mb-10 p-5 rounded-3xl bg-gradient-to-r from-[#1DB954]/20 via-[#181818] to-[#282828] border border-[#1DB954]/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 shadow-xl">
+          <div>
+            <div className="flex items-center gap-2 text-[#1DB954] font-bold text-xs uppercase tracking-wider mb-1">
+              <span className="material-symbols-outlined text-sm">auto_awesome</span>
+              <span>Spotify-Style Smart Feed</span>
+            </div>
+            <h3 className="text-lg font-extrabold text-white">Tailored Recommendations</h3>
+            <p className="text-xs text-[#B3B3B3] mt-0.5">Based on your onboarding preferences, liked songs, and listening history.</p>
+          </div>
+          <button
+            onClick={() => setIsOnboardingOpen(true)}
+            className="bg-[#1DB954] hover:bg-[#1ed760] text-black px-5 py-2.5 rounded-full text-xs font-extrabold shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer flex-shrink-0"
+          >
+            Customize Preferences
+          </button>
+        </section>
+
+        {/* Dynamic Personalized Recommendation Carousels */}
+        {isLoadingRecs ? (
+          <div className="mb-12 space-y-4 animate-pulse">
+            <div className="h-6 w-48 bg-[#282828] rounded-lg" />
+            <div className="flex gap-4 overflow-hidden">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <div key={n} className="w-40 h-52 bg-[#181818] border border-[#282828] rounded-2xl p-3 flex-shrink-0" />
+              ))}
+            </div>
+          </div>
+        ) : (
+          recommendationSections.map((section) => {
+            const tracks = section.songs.map(mapSongDtoToTrack);
+            if (tracks.length === 0) return null;
+
+            return (
+              <section key={section.id} className="mb-12">
+                <div className="flex justify-between items-end mb-4">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-white tracking-tight">{section.title}</h3>
+                    <p className="text-xs text-[#B3B3B3] mt-0.5">{section.description}</p>
+                  </div>
+                </div>
+
+                {/* Horizontal Scrolling Carousel */}
+                <div className="flex gap-4 overflow-x-auto pb-4 scrollbar-none snap-x">
+                  {tracks.map((track) => {
+                    const isSelected = track.id === currentTrack.id;
+                    const isTrackFav = favorites.includes(track.id);
+
+                    return (
+                      <div
+                        key={track.id}
+                        onClick={() => playTrack(track, tracks)}
+                        className={`w-44 flex-shrink-0 bg-[#181818] hover:bg-[#242424] border border-[#282828] p-3.5 rounded-2xl transition-all duration-300 group cursor-pointer snap-start relative flex flex-col justify-between ${
+                          isSelected ? 'border-[#1DB954] bg-[#242424]' : ''
+                        }`}
+                      >
+                        <div>
+                          <div className="relative aspect-square w-full rounded-xl overflow-hidden mb-3 shadow-md">
+                            <img
+                              src={track.coverUrl}
+                              alt={track.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            />
+
+                            {/* Hover Play Button */}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (isSelected) togglePlay();
+                                else playTrack(track, tracks);
+                              }}
+                              className={`absolute bottom-2 right-2 w-10 h-10 rounded-full bg-[#1DB954] text-black flex items-center justify-center shadow-lg transition-all duration-300 ${
+                                isSelected
+                                  ? 'opacity-100 scale-100'
+                                  : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 hover:scale-110'
+                              }`}
+                            >
+                              <span className="material-symbols-outlined text-[#121212]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                                {isSelected && isPlaying ? 'pause' : 'play_arrow'}
+                              </span>
+                            </button>
+                          </div>
+
+                          <h4 className={`font-bold text-sm truncate ${isSelected ? 'text-[#1DB954]' : 'text-white'}`}>
+                            {track.title}
+                          </h4>
+                          <p className="text-xs text-[#B3B3B3] font-medium truncate mt-0.5">{track.artist}</p>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-3 pt-2 border-t border-[#282828]/50">
+                          <span className="text-[10px] uppercase font-bold text-[#1DB954] bg-[#1DB954]/10 px-2 py-0.5 rounded-md truncate max-w-[80px]">
+                            {track.genre || track.language || 'Music'}
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleFavorite(track.id);
+                            }}
+                            className="text-[#B3B3B3] hover:text-[#1DB954] transition-colors p-1"
+                          >
+                            <span
+                              className="material-symbols-outlined text-base"
+                              style={isTrackFav ? { fontVariationSettings: "'FILL' 1", color: '#1DB954' } : {}}
+                            >
+                              {isTrackFav ? 'favorite' : 'favorite_border'}
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })
+        )}
 
         {/* Trending Genres Bento Grid */}
         <section className="mb-12">
@@ -253,18 +409,18 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
           </div>
         </section>
 
-        {/* Featured Songs & Playlists */}
+        {/* Featured Songs List */}
         <section className="mb-20">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xl font-bold text-white">
-              Featured Tracks
+              Top Trending Chart Tracks
             </h3>
             {isLoadingTracks && (
               <div className="flex items-center gap-2 text-xs font-semibold text-[#1DB954]">
                 <span className="material-symbols-outlined animate-spin text-sm">
                   progress_activity
                 </span>
-                <span>Connecting live Render backend...</span>
+                <span>Loading tracks...</span>
               </div>
             )}
           </div>
@@ -413,6 +569,13 @@ export const SearchHomeScreen: React.FC<SearchHomeScreenProps> = ({
           onClose={() => setActiveSongForMenu(null)}
         />
       )}
+
+      {/* Cold Start / Onboarding Modal */}
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
+        onSaved={loadRecommendations}
+      />
 
       <BottomNav currentScreen="home" onNavigate={onNavigate} />
     </div>

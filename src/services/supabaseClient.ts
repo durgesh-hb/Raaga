@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { Playlist, PlaylistTrack, Track } from '../types';
 
 const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
@@ -11,19 +12,28 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
  * Trigger Supabase Google OAuth Redirect Flow (Web & Native Mobile App)
+ *
+ * On native (Android/iOS): Uses skipBrowserRedirect to obtain the OAuth URL,
+ * then opens it via Browser.open() (Chrome Custom Tab) to avoid Google's
+ * WebView block (`disallowed_useragent`). Supabase redirects to the backend
+ * bridge page, which forwards the hash tokens to raaga://login-callback.
+ *
+ * On web: Standard Supabase redirect flow via window.location.origin.
  */
 export async function signInWithGoogleSupabase() {
   const isNative = Capacitor.isNativePlatform();
 
-  // Mobile deep links (raaga://login-callback or com.ragga.stream://auth-callback) vs Web window origin
+  // Native: use the backend bridge page (valid TLD, accepted by Supabase dashboard).
+  // The bridge page reads the hash fragment and redirects to raaga://login-callback#...
   const redirectTo = isNative
-    ? 'raaga://login-callback'
+    ? 'https://raaga-backend-deployment-bwu1.onrender.com/auth/mobile-callback.html'
     : `${window.location.origin}`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo,
+      skipBrowserRedirect: isNative, // On native: get the URL without auto-navigating
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
@@ -36,25 +46,47 @@ export async function signInWithGoogleSupabase() {
     throw error;
   }
 
+  // On native: open the OAuth URL in a Chrome Custom Tab (system browser)
+  if (isNative && data?.url) {
+    await Browser.open({ url: data.url, windowName: '_self' });
+  }
+
   return data;
 }
 
 /**
  * Handle Capacitor App Deep Link for Mobile App Google OAuth Callback
+ *
+ * Supabase returns tokens in the URL hash fragment (#access_token=...&refresh_token=...),
+ * NOT as query parameters. We parse the fragment, set the session, then close the
+ * Chrome Custom Tab that was used for the OAuth flow.
  */
 if (Capacitor.isNativePlatform()) {
   App.addListener('appUrlOpen', async (data) => {
     if (data.url && (data.url.includes('login-callback') || data.url.includes('auth-callback') || data.url.includes('raaga://'))) {
       try {
         const url = new URL(data.url);
-        const access_token = url.searchParams.get('access_token');
-        const refresh_token = url.searchParams.get('refresh_token');
+
+        // Supabase OAuth tokens arrive in the URL hash fragment, not query params
+        const hashFragment = url.hash ? url.hash.substring(1) : '';
+        const hashParams = new URLSearchParams(hashFragment);
+
+        const access_token = hashParams.get('access_token') || url.searchParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token') || url.searchParams.get('refresh_token');
 
         if (access_token && refresh_token) {
           await supabase.auth.setSession({
             access_token,
             refresh_token,
           });
+          console.log('[SupabaseAuth] Session set from deep link tokens.');
+        }
+
+        // Close the Chrome Custom Tab that was opened for OAuth
+        try {
+          await Browser.close();
+        } catch (_) {
+          // Browser.close() may throw if tab was already dismissed — safe to ignore
         }
       } catch (err) {
         console.warn('[SupabaseAuth] Deep link URL parse notice:', err);
