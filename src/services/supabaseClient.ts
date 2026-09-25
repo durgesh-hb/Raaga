@@ -241,6 +241,7 @@ export async function createPlaylist(title: string, description: string = ''): P
   return data;
 }
 export const createPlaylistSupabase = createPlaylist;
+export const createCustomPlaylist = createPlaylist;
 
 /**
  * 5. Fetch all Playlists for current user from Supabase (user_id = auth.uid())
@@ -266,18 +267,20 @@ export const fetchPlaylistsSupabase = fetchUserPlaylists;
 
 /**
  * 6. Delete Entire Playlist from Supabase 'playlists' & 'playlist_tracks' tables
+ *    playlist_tracks are cascade-deleted via FK constraint on playlist_id.
+ *    Explicit track deletion kept as safety fallback for schemas without CASCADE.
  */
 export async function deletePlaylist(playlistId: string): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id;
 
-  // 1. Delete linked tracks
+  // Safety: explicitly delete linked tracks (no-op if CASCADE is configured)
   await supabase
     .from('playlist_tracks')
     .delete()
     .eq('playlist_id', playlistId);
 
-  // 2. Delete playlist entity matching user_id
+  // Delete playlist entity, scoped to current user for RLS safety
   const query = supabase
     .from('playlists')
     .delete()
@@ -296,11 +299,26 @@ export async function deletePlaylist(playlistId: string): Promise<boolean> {
   return true;
 }
 export const deletePlaylistSupabase = deletePlaylist;
+export const deleteEntirePlaylist = deletePlaylist;
 
 /**
  * 7. Add a Song Track to a Playlist in Supabase 'playlist_tracks' table
+ *    Resilient field mapping: accepts Track shapes with coverUrl/artwork/artworkUrl
+ *    and audioUrl/streamUrl for maximum compatibility across DTOs.
  */
 export async function addSongToPlaylist(playlistId: string, track: Track): Promise<PlaylistTrack | null> {
+  // Resilient artwork URL resolution: canonical coverUrl, then DTO alternatives
+  const artworkUrl = track.coverUrl
+    || (track as any).artwork
+    || (track as any).artworkUrl
+    || (track as any).imageUrl
+    || '';
+
+  // Resilient stream URL resolution: canonical audioUrl, then DTO alternatives
+  const streamUrl = track.audioUrl
+    || (track as any).streamUrl
+    || '';
+
   const { data, error } = await supabase
     .from('playlist_tracks')
     .insert([
@@ -309,9 +327,9 @@ export async function addSongToPlaylist(playlistId: string, track: Track): Promi
         track_id: track.id,
         title: track.title,
         artist: track.artist,
-        artwork_url: track.coverUrl || '',
+        artwork_url: artworkUrl,
+        stream_url: streamUrl,
         duration: track.duration || 180,
-        stream_url: track.audioUrl || '',
       },
     ])
     .select()
@@ -325,6 +343,7 @@ export async function addSongToPlaylist(playlistId: string, track: Track): Promi
   return data;
 }
 export const addTrackToPlaylistSupabase = addSongToPlaylist;
+export const addTrackToPlaylist = addSongToPlaylist;
 
 /**
  * 8. Remove a Song Track from a Playlist in Supabase 'playlist_tracks' table
@@ -344,6 +363,7 @@ export async function removeSongFromPlaylist(playlistId: string, trackId: string
   return true;
 }
 export const removeTrackFromPlaylistSupabase = removeSongFromPlaylist;
+export const removeTrackFromPlaylist = removeSongFromPlaylist;
 
 /**
  * 9. Dynamically fetch Saved Songs for a Playlist ID from 'playlist_tracks'

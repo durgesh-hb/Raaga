@@ -4,7 +4,7 @@ import { ScreenType, TransitionType } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useAudio } from '../context/AudioContext';
 import { supabase, upsertUserProfile, signOutCleanSupabase } from '../services/supabaseClient';
-import { OnboardingModal } from './OnboardingModal';
+import { OnboardingModal } from '../components/OnboardingModal';
 
 interface SettingsScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;

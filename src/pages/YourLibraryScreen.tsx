@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ScreenType, TransitionType, Track, Playlist } from '../types';
-import { BottomNav } from './Navigation';
+import { BottomNav } from '../components/Navigation';
 import { useAudio } from '../context/AudioContext';
 import { MusicApiService } from '../services/musicApiService';
-import { SongActionMenuModal } from './SongActionMenuModal';
+import { SongActionMenuModal } from '../components/SongActionMenuModal';
 import {
   createPlaylist,
   fetchUserPlaylists,
@@ -50,6 +50,9 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
 
   // Song Action Menu Modal State
   const [activeSongForMenu, setActiveSongForMenu] = useState<Track | null>(null);
+
+  // Playlist Options Menu State (three-dot menu per playlist row)
+  const [playlistOptionsId, setPlaylistOptionsId] = useState<string | null>(null);
 
   // Combine queue & favorites for Liked Songs
   const likedTracks = queue.filter((t) => t.isFavorite || favorites.includes(t.id));
@@ -452,11 +455,22 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
                 <h3 className="text-lg font-extrabold text-white">
                   {activeFilter === 'liked' ? 'Your Liked Songs' : 'Your Playlists'}
                 </h3>
-                {isLoadingPlaylists && (
-                  <span className="material-symbols-outlined text-[#1DB954] animate-spin text-sm">
-                    progress_activity
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {activeFilter === 'playlists' && (
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="px-4 py-2 rounded-full text-xs font-extrabold bg-[#1DB954]/10 border border-[#1DB954]/40 text-[#1DB954] hover:bg-[#1DB954]/20 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">add</span>
+                      Create Playlist
+                    </button>
+                  )}
+                  {isLoadingPlaylists && (
+                    <span className="material-symbols-outlined text-[#1DB954] animate-spin text-sm">
+                      progress_activity
+                    </span>
+                  )}
+                </div>
               </div>
 
               {activeFilter === 'liked' ? (
@@ -506,34 +520,69 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
                 playlists.map((pl) => (
                   <div
                     key={pl.id}
-                    onClick={() => openPlaylistDetails(pl)}
-                    className="flex items-center gap-4 p-3.5 bg-[#181818] border border-[#282828] rounded-2xl hover:bg-[#282828] transition-all cursor-pointer group"
+                    className="relative"
                   >
-                    <div className="w-14 h-14 rounded-xl bg-[#282828] flex items-center justify-center text-[#1DB954] flex-shrink-0 border border-[#3E3E3E]">
-                      <span className="material-symbols-outlined text-2xl">queue_music</span>
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <h4 className="text-base font-bold text-white truncate">{pl.title}</h4>
-                      <p className="text-xs text-[#B3B3B3] font-medium">
-                        {pl.description || 'Tap to view tracks'}
-                      </p>
-                    </div>
-
-                    {/* Quick Delete Playlist Action */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPlaylistToDelete(pl);
-                      }}
-                      className="w-8 h-8 rounded-full hover:bg-red-500/20 flex items-center justify-center text-[#B3B3B3] hover:text-red-400 transition-colors"
-                      title="Delete Playlist"
+                    <div
+                      onClick={() => openPlaylistDetails(pl)}
+                      className="flex items-center gap-4 p-3.5 bg-[#181818] border border-[#282828] rounded-2xl hover:bg-[#282828] transition-all cursor-pointer group"
                     >
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
+                      <div className="w-14 h-14 rounded-xl bg-[#282828] flex items-center justify-center text-[#1DB954] flex-shrink-0 border border-[#3E3E3E]">
+                        <span className="material-symbols-outlined text-2xl">queue_music</span>
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <h4 className="text-base font-bold text-white truncate">{pl.title}</h4>
+                        <p className="text-xs text-[#B3B3B3] font-medium">
+                          {pl.description || 'Tap to view tracks'}
+                        </p>
+                      </div>
 
-                    <span className="material-symbols-outlined text-[#B3B3B3] group-hover:text-[#1DB954]">
-                      chevron_right
-                    </span>
+                      {/* Playlist Options Menu (...) Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPlaylistOptionsId(playlistOptionsId === pl.id ? null : pl.id);
+                        }}
+                        className="w-9 h-9 rounded-full hover:bg-[#3E3E3E] flex items-center justify-center text-[#B3B3B3] hover:text-white transition-colors cursor-pointer"
+                        title="Playlist Options"
+                      >
+                        <span className="material-symbols-outlined text-lg">more_vert</span>
+                      </button>
+
+                      <span className="material-symbols-outlined text-[#B3B3B3] group-hover:text-[#1DB954]">
+                        chevron_right
+                      </span>
+                    </div>
+
+                    {/* Dropdown Options Menu for Playlist Row */}
+                    {playlistOptionsId === pl.id && (
+                      <div
+                        className="absolute right-12 top-14 z-30 w-48 bg-[#282828] border border-[#3E3E3E] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlaylistOptionsId(null);
+                            openPlaylistDetails(pl);
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs font-bold text-white hover:bg-[#3E3E3E] flex items-center gap-3 transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[#1DB954] text-base">visibility</span>
+                          View Tracks
+                        </button>
+                        <div className="h-px bg-[#3E3E3E]" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlaylistOptionsId(null);
+                            setPlaylistToDelete(pl);
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-3 transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                          Delete Playlist
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

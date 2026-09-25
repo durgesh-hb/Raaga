@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ScreenType, TransitionType, Track } from '../types';
-import { BottomNav } from './Navigation';
-import { CATEGORIES, IMAGINE_DRAGONS_ARTIST, USER_PROFILE } from '../data';
+import { BottomNav } from '../components/Navigation';
+import { CATEGORIES, FEATURED_ARTIST, USER_PROFILE } from '../constants/fallbackData';
 import { MusicApiService } from '../services/musicApiService';
 import { useAudio } from '../context/AudioContext';
-import { SongActionMenuModal } from './SongActionMenuModal';
+import { SongActionMenuModal } from '../components/SongActionMenuModal';
 
 interface SearchExplorerScreenProps {
   initialSearchQuery?: string;
@@ -235,8 +235,8 @@ export const SearchExplorerScreen: React.FC<SearchExplorerScreenProps> = ({
                 <div className="w-28 h-28 md:w-36 md:h-36 rounded-full overflow-hidden shadow-xl flex-shrink-0 border-2 border-[#282828]">
                   <img
                     className="w-full h-full object-cover"
-                    alt={searchResults.length > 0 ? searchResults[0].artist : IMAGINE_DRAGONS_ARTIST.name}
-                    src={searchResults.length > 0 ? searchResults[0].coverUrl : IMAGINE_DRAGONS_ARTIST.imageUrl}
+                    alt={searchResults.length > 0 ? searchResults[0].artist : FEATURED_ARTIST.name}
+                    src={searchResults.length > 0 ? searchResults[0].coverUrl : FEATURED_ARTIST.imageUrl}
                   />
                 </div>
                 <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left justify-center">

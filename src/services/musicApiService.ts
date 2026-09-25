@@ -451,7 +451,8 @@ export class MusicApiService {
 }
 
 /**
- * Debounce helper
+ * @deprecated Use import { debounce } from '../utils/debounce' instead.
+ * Kept here temporarily for backward compatibility.
  */
 export function debounce<
   T extends (...args: any[]) => void

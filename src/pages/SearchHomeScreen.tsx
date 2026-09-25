@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { ScreenType, TransitionType, Track, RecommendationSection } from '../types';
-import { BottomNav } from './Navigation';
-import { PLAYLISTS, TRACKS, USER_PROFILE } from '../data';
+import { BottomNav } from '../components/Navigation';
+import { PLAYLISTS, TRACKS, USER_PROFILE } from '../constants/fallbackData';
 import { MusicApiService, mapSongDtoToTrack } from '../services/musicApiService';
 import { useAudio } from '../context/AudioContext';
-import { SongActionMenuModal } from './SongActionMenuModal';
-import { OnboardingModal } from './OnboardingModal';
+import { SongActionMenuModal } from '../components/SongActionMenuModal';
+import { OnboardingModal } from '../components/OnboardingModal';
 
 interface SearchHomeScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;

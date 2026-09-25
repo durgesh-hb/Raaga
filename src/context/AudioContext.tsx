@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useRef, useEffect } from 'react';
 import { Track } from '../types';
-import { TRACKS } from '../data';
+import { TRACKS } from '../constants/fallbackData';
 import { MusicApiService, resolveAudioStreamUrl } from '../services/musicApiService';
 import { supabase } from '../services/supabaseClient';
 

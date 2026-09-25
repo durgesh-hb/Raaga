@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { ScreenType, TransitionType, Track } from '../types';
-import { BottomNav } from './Navigation';
+import { BottomNav } from '../components/Navigation';
 import { useAudio } from '../context/AudioContext';
-import { SongActionMenuModal } from './SongActionMenuModal';
+import { SongActionMenuModal } from '../components/SongActionMenuModal';
 
 interface FullPlayerScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;

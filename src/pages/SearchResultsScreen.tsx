@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ScreenType, TransitionType, Track } from '../types';
-import { BottomNav } from './Navigation';
-import { IMAGINE_DRAGONS_ARTIST, TRACKS, USER_PROFILE } from '../data';
+import { BottomNav } from '../components/Navigation';
+import { FEATURED_ARTIST, TRACKS, USER_PROFILE } from '../constants/fallbackData';
 import { MusicApiService } from '../services/musicApiService';
 import { useAudio } from '../context/AudioContext';
-import { SongActionMenuModal } from './SongActionMenuModal';
+import { SongActionMenuModal } from '../components/SongActionMenuModal';
 
 interface SearchResultsScreenProps {
   initialSearchQuery?: string;
@@ -188,8 +188,8 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
             <div className="relative w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden shadow-2xl flex-shrink-0 border-4 border-[#282828]">
               <img
                 className="w-full h-full object-cover"
-                alt={IMAGINE_DRAGONS_ARTIST.name}
-                src={IMAGINE_DRAGONS_ARTIST.imageUrl}
+                alt={FEATURED_ARTIST.name}
+                src={FEATURED_ARTIST.imageUrl}
               />
             </div>
             <div className="flex-1 flex flex-col items-center md:items-start text-center md:text-left justify-center h-full">
@@ -197,10 +197,10 @@ export const SearchResultsScreen: React.FC<SearchResultsScreenProps> = ({
                 VERIFIED ARTIST
               </span>
               <h3 className="text-3xl md:text-4xl font-extrabold mb-3 text-white">
-                {IMAGINE_DRAGONS_ARTIST.name}
+                {FEATURED_ARTIST.name}
               </h3>
               <p className="text-sm md:text-base text-[#B3B3B3] mb-6 max-w-lg">
-                {IMAGINE_DRAGONS_ARTIST.listeners}
+                {FEATURED_ARTIST.listeners}
               </p>
               <div className="flex gap-4">
                 <button
