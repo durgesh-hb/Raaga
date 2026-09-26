@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Track } from '../types';
+import { Track, Playlist } from '../types';
 import {
-  fetchPlaylistsSupabase,
-  addTrackToPlaylistSupabase,
+  fetchUserPlaylists,
+  addSongToPlaylist,
+  createPlaylist,
 } from '../services/supabaseClient';
 import { useAudio } from '../context/AudioContext';
 
@@ -19,15 +20,20 @@ export const SongActionMenuModal: React.FC<SongActionMenuModalProps> = ({
   onTrackLikedToggle,
 }) => {
   const { playTrack, addToQueue, showToast, favorites, toggleFavorite } = useAudio();
-  const [playlists, setPlaylists] = useState<any[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoadingPlaylists, setIsLoadingPlaylists] = useState<boolean>(false);
   const [showPlaylistSelector, setShowPlaylistSelector] = useState<boolean>(false);
   const [isAdding, setIsAdding] = useState<boolean>(false);
 
+  // Inline Create Playlist State
+  const [showCreateInline, setShowCreateInline] = useState<boolean>(false);
+  const [newTitleInline, setNewTitleInline] = useState<string>('');
+  const [isCreatingInline, setIsCreatingInline] = useState<boolean>(false);
+
   useEffect(() => {
     if (track) {
       setIsLoadingPlaylists(true);
-      fetchPlaylistsSupabase()
+      fetchUserPlaylists()
         .then((data) => setPlaylists(data || []))
         .catch(console.warn)
         .finally(() => setIsLoadingPlaylists(false));
@@ -41,13 +47,34 @@ export const SongActionMenuModal: React.FC<SongActionMenuModalProps> = ({
   const handleAddToPlaylist = async (playlistId: string, playlistTitle: string) => {
     setIsAdding(true);
     try {
-      await addTrackToPlaylistSupabase(playlistId, track);
+      await addSongToPlaylist(playlistId, track);
       showToast(`Added "${track.title}" to "${playlistTitle}"!`);
       onClose();
     } catch (err: any) {
       showToast(err?.message || 'Failed to add song to playlist');
     } finally {
       setIsAdding(false);
+    }
+  };
+
+  const handleInlineCreateAndAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitleInline.trim()) return;
+
+    setIsCreatingInline(true);
+    const title = newTitleInline.trim();
+    try {
+      const created = await createPlaylist(title);
+      if (created) {
+        setPlaylists((prev) => [created, ...prev]);
+        setNewTitleInline('');
+        setShowCreateInline(false);
+        await handleAddToPlaylist(created.id, created.title);
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to create playlist');
+    } finally {
+      setIsCreatingInline(false);
     }
   };
 
@@ -140,16 +167,63 @@ export const SongActionMenuModal: React.FC<SongActionMenuModalProps> = ({
               <div className="flex items-center justify-between">
                 <h4 className="text-sm font-bold text-white">Select Destination Playlist</h4>
                 <button
-                  onClick={() => setShowPlaylistSelector(false)}
+                  onClick={() => {
+                    setShowPlaylistSelector(false);
+                    setShowCreateInline(false);
+                  }}
                   className="text-xs text-[#1DB954] hover:underline font-bold"
                 >
                   Back to actions
                 </button>
               </div>
 
+              {/* Create Playlist Button / Inline Form */}
+              {!showCreateInline ? (
+                <button
+                  onClick={() => setShowCreateInline(true)}
+                  className="w-full p-3 rounded-2xl bg-[#1DB954]/10 border border-[#1DB954]/40 hover:bg-[#1DB954]/20 text-[#1DB954] text-xs font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <span className="material-symbols-outlined text-base">add</span>
+                  <span>Create New Playlist</span>
+                </button>
+              ) : (
+                <form onSubmit={handleInlineCreateAndAdd} className="p-3 bg-[#121212] rounded-2xl border border-[#1DB954]/40 space-y-2">
+                  <input
+                    type="text"
+                    autoFocus
+                    required
+                    placeholder="New Playlist Name..."
+                    value={newTitleInline}
+                    onChange={(e) => setNewTitleInline(e.target.value)}
+                    className="w-full h-10 px-3 rounded-xl bg-[#181818] border border-[#282828] text-xs text-white placeholder-[#B3B3B3] outline-none focus:border-[#1DB954]"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateInline(false)}
+                      className="px-3 py-1.5 rounded-xl bg-[#282828] text-white text-[11px] font-bold"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isCreatingInline || !newTitleInline.trim()}
+                      className="px-4 py-1.5 rounded-xl bg-[#1DB954] text-black text-[11px] font-extrabold disabled:opacity-50"
+                    >
+                      {isCreatingInline ? 'Creating...' : 'Create & Add'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
               <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
                 {isLoadingPlaylists ? (
-                  <div className="py-6 text-center text-xs text-[#B3B3B3]">Loading playlists...</div>
+                  <div className="py-6 text-center text-xs text-[#B3B3B3] flex items-center justify-center gap-2">
+                    <span className="material-symbols-outlined text-[#1DB954] animate-spin text-base">
+                      progress_activity
+                    </span>
+                    <span>Loading playlists...</span>
+                  </div>
                 ) : playlists.length > 0 ? (
                   playlists.map((pl) => (
                     <button
@@ -167,7 +241,7 @@ export const SongActionMenuModal: React.FC<SongActionMenuModalProps> = ({
                   ))
                 ) : (
                   <div className="py-6 text-center text-xs text-[#B3B3B3]">
-                    No playlists created yet. Create one in Your Library!
+                    No playlists created yet. Click above to create one!
                   </div>
                 )}
               </div>
@@ -178,3 +252,4 @@ export const SongActionMenuModal: React.FC<SongActionMenuModalProps> = ({
     </AnimatePresence>
   );
 };
+

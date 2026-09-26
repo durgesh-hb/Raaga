@@ -1,28 +1,39 @@
 import { createClient } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
+import { Playlist, PlaylistTrack, Track } from '../types';
 
 const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
 const SUPABASE_URL = metaEnv?.VITE_SUPABASE_URL || 'https://toxmcpcnpfapplzpztit.supabase.co';
-const SUPABASE_ANON_KEY = metaEnv?.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+const SUPABASE_ANON_KEY = metaEnv?.VITE_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
  * Trigger Supabase Google OAuth Redirect Flow (Web & Native Mobile App)
+ *
+ * On native (Android/iOS): Uses skipBrowserRedirect to obtain the OAuth URL,
+ * then opens it via Browser.open() (Chrome Custom Tab) to avoid Google's
+ * WebView block (`disallowed_useragent`). Supabase redirects to the backend
+ * bridge page, which forwards the hash tokens to raaga://login-callback.
+ *
+ * On web: Standard Supabase redirect flow via window.location.origin.
  */
 export async function signInWithGoogleSupabase() {
   const isNative = Capacitor.isNativePlatform();
-  
-  // Mobile deep links (raaga://login-callback or com.ragga.stream://auth-callback) vs Web window origin
-  const redirectTo = isNative 
-    ? 'raaga://login-callback' 
+
+  // Native: use the backend bridge page (valid TLD, accepted by Supabase dashboard).
+  // The bridge page reads the hash fragment and redirects to raaga://login-callback#...
+  const redirectTo = isNative
+    ? 'https://raaga-backend-deployment-bwu1.onrender.com/auth/mobile-callback.html'
     : `${window.location.origin}`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo,
+      skipBrowserRedirect: isNative, // On native: get the URL without auto-navigating
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
@@ -35,25 +46,47 @@ export async function signInWithGoogleSupabase() {
     throw error;
   }
 
+  // On native: open the OAuth URL in a Chrome Custom Tab (system browser)
+  if (isNative && data?.url) {
+    await Browser.open({ url: data.url, windowName: '_self' });
+  }
+
   return data;
 }
 
 /**
  * Handle Capacitor App Deep Link for Mobile App Google OAuth Callback
+ *
+ * Supabase returns tokens in the URL hash fragment (#access_token=...&refresh_token=...),
+ * NOT as query parameters. We parse the fragment, set the session, then close the
+ * Chrome Custom Tab that was used for the OAuth flow.
  */
 if (Capacitor.isNativePlatform()) {
   App.addListener('appUrlOpen', async (data) => {
     if (data.url && (data.url.includes('login-callback') || data.url.includes('auth-callback') || data.url.includes('raaga://'))) {
       try {
         const url = new URL(data.url);
-        const access_token = url.searchParams.get('access_token');
-        const refresh_token = url.searchParams.get('refresh_token');
+
+        // Supabase OAuth tokens arrive in the URL hash fragment, not query params
+        const hashFragment = url.hash ? url.hash.substring(1) : '';
+        const hashParams = new URLSearchParams(hashFragment);
+
+        const access_token = hashParams.get('access_token') || url.searchParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token') || url.searchParams.get('refresh_token');
 
         if (access_token && refresh_token) {
           await supabase.auth.setSession({
             access_token,
             refresh_token,
           });
+          console.log('[SupabaseAuth] Session set from deep link tokens.');
+        }
+
+        // Close the Chrome Custom Tab that was opened for OAuth
+        try {
+          await Browser.close();
+        } catch (_) {
+          // Browser.close() may throw if tab was already dismissed — safe to ignore
         }
       } catch (err) {
         console.warn('[SupabaseAuth] Deep link URL parse notice:', err);
@@ -175,7 +208,7 @@ export async function signOutCleanSupabase() {
 /**
  * 4. Create new Playlist in Supabase 'playlists' table
  */
-export async function createPlaylistSupabase(title: string, description: string = '') {
+export async function createPlaylist(title: string, description: string = ''): Promise<Playlist | null> {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || 'user_default';
   const coverUrl = 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=500&auto=format&fit=crop&q=60';
@@ -190,7 +223,8 @@ export async function createPlaylistSupabase(title: string, description: string 
         cover_url: coverUrl,
       },
     ])
-    .select();
+    .select()
+    .single();
 
   if (error) {
     console.warn('[SupabaseDB] Insert playlist error (falling back locally):', error.message);
@@ -204,13 +238,15 @@ export async function createPlaylistSupabase(title: string, description: string 
     };
   }
 
-  return data && data.length > 0 ? data[0] : null;
+  return data;
 }
+export const createPlaylistSupabase = createPlaylist;
+export const createCustomPlaylist = createPlaylist;
 
 /**
- * 5. Fetch all Playlists for current user from Supabase
+ * 5. Fetch all Playlists for current user from Supabase (user_id = auth.uid())
  */
-export async function fetchPlaylistsSupabase() {
+export async function fetchUserPlaylists(): Promise<Playlist[]> {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id || 'user_default';
 
@@ -227,21 +263,24 @@ export async function fetchPlaylistsSupabase() {
 
   return data || [];
 }
+export const fetchPlaylistsSupabase = fetchUserPlaylists;
 
 /**
  * 6. Delete Entire Playlist from Supabase 'playlists' & 'playlist_tracks' tables
+ *    playlist_tracks are cascade-deleted via FK constraint on playlist_id.
+ *    Explicit track deletion kept as safety fallback for schemas without CASCADE.
  */
-export async function deletePlaylistSupabase(playlistId: string) {
+export async function deletePlaylist(playlistId: string): Promise<boolean> {
   const { data: { user } } = await supabase.auth.getUser();
   const userId = user?.id;
 
-  // 1. Delete linked tracks
+  // Safety: explicitly delete linked tracks (no-op if CASCADE is configured)
   await supabase
     .from('playlist_tracks')
     .delete()
     .eq('playlist_id', playlistId);
 
-  // 2. Delete playlist entity matching user_id
+  // Delete playlist entity, scoped to current user for RLS safety
   const query = supabase
     .from('playlists')
     .delete()
@@ -259,11 +298,27 @@ export async function deletePlaylistSupabase(playlistId: string) {
 
   return true;
 }
+export const deletePlaylistSupabase = deletePlaylist;
+export const deleteEntirePlaylist = deletePlaylist;
 
 /**
  * 7. Add a Song Track to a Playlist in Supabase 'playlist_tracks' table
+ *    Resilient field mapping: accepts Track shapes with coverUrl/artwork/artworkUrl
+ *    and audioUrl/streamUrl for maximum compatibility across DTOs.
  */
-export async function addTrackToPlaylistSupabase(playlistId: string, track: any) {
+export async function addSongToPlaylist(playlistId: string, track: Track): Promise<PlaylistTrack | null> {
+  // Resilient artwork URL resolution: canonical coverUrl, then DTO alternatives
+  const artworkUrl = track.coverUrl
+    || (track as any).artwork
+    || (track as any).artworkUrl
+    || (track as any).imageUrl
+    || '';
+
+  // Resilient stream URL resolution: canonical audioUrl, then DTO alternatives
+  const streamUrl = track.audioUrl
+    || (track as any).streamUrl
+    || '';
+
   const { data, error } = await supabase
     .from('playlist_tracks')
     .insert([
@@ -272,25 +327,28 @@ export async function addTrackToPlaylistSupabase(playlistId: string, track: any)
         track_id: track.id,
         title: track.title,
         artist: track.artist,
-        artwork_url: track.coverUrl || track.artworkUrl || track.imageUrl || '',
+        artwork_url: artworkUrl,
+        stream_url: streamUrl,
         duration: track.duration || 180,
-        stream_url: track.audioUrl || track.streamUrl || '',
       },
     ])
-    .select();
+    .select()
+    .single();
 
   if (error) {
-    console.warn('[SupabaseDB] Add track to playlist error:', error.message);
+    console.warn('[SupabaseDB] Add song to playlist error:', error.message);
     throw new Error(error.message);
   }
 
-  return data && data.length > 0 ? data[0] : null;
+  return data;
 }
+export const addTrackToPlaylistSupabase = addSongToPlaylist;
+export const addTrackToPlaylist = addSongToPlaylist;
 
 /**
  * 8. Remove a Song Track from a Playlist in Supabase 'playlist_tracks' table
  */
-export async function removeTrackFromPlaylistSupabase(playlistId: string, trackId: string) {
+export async function removeSongFromPlaylist(playlistId: string, trackId: string): Promise<boolean> {
   const { error } = await supabase
     .from('playlist_tracks')
     .delete()
@@ -298,17 +356,19 @@ export async function removeTrackFromPlaylistSupabase(playlistId: string, trackI
     .eq('track_id', trackId);
 
   if (error) {
-    console.warn('[SupabaseDB] Remove track from playlist error:', error.message);
+    console.warn('[SupabaseDB] Remove song from playlist error:', error.message);
     throw new Error(error.message);
   }
 
   return true;
 }
+export const removeTrackFromPlaylistSupabase = removeSongFromPlaylist;
+export const removeTrackFromPlaylist = removeSongFromPlaylist;
 
 /**
  * 9. Dynamically fetch Saved Songs for a Playlist ID from 'playlist_tracks'
  */
-export async function fetchPlaylistTracksSupabase(playlistId: string) {
+export async function fetchPlaylistTracks(playlistId: string): Promise<Track[]> {
   const { data, error } = await supabase
     .from('playlist_tracks')
     .select('*')
@@ -332,3 +392,5 @@ export async function fetchPlaylistTracksSupabase(playlistId: string) {
     isFavorite: true,
   }));
 }
+export const fetchPlaylistTracksSupabase = fetchPlaylistTracks;
+

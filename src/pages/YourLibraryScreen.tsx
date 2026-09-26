@@ -1,28 +1,19 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { ScreenType, TransitionType, Track } from '../types';
-import { BottomNav } from './Navigation';
+import { ScreenType, TransitionType, Track, Playlist } from '../types';
+import { BottomNav } from '../components/Navigation';
 import { useAudio } from '../context/AudioContext';
 import { MusicApiService } from '../services/musicApiService';
-import { SongActionMenuModal } from './SongActionMenuModal';
+import { SongActionMenuModal } from '../components/SongActionMenuModal';
 import {
-  createPlaylistSupabase,
-  fetchPlaylistsSupabase,
-  fetchPlaylistTracksSupabase,
-  deletePlaylistSupabase,
-  removeTrackFromPlaylistSupabase,
+  createPlaylist,
+  fetchUserPlaylists,
+  fetchPlaylistTracks,
+  deletePlaylist,
+  removeSongFromPlaylist,
 } from '../services/supabaseClient';
 
 interface YourLibraryScreenProps {
   onNavigate: (screen: ScreenType, transition?: TransitionType) => void;
-}
-
-interface PlaylistObj {
-  id: string;
-  title: string;
-  description?: string;
-  cover_url?: string;
-  user_id?: string;
-  created_at?: string;
 }
 
 export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate }) => {
@@ -39,11 +30,11 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   const [activeFilter, setActiveFilter] = useState<'playlists' | 'liked'>('playlists');
 
   // Supabase Database Playlists State
-  const [playlists, setPlaylists] = useState<PlaylistObj[]>([]);
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [isLoadingPlaylists, setIsLoadingPlaylists] = useState<boolean>(true);
 
   // Selected Playlist Detail View State
-  const [selectedPlaylist, setSelectedPlaylist] = useState<PlaylistObj | null>(null);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
   const [playlistTracks, setPlaylistTracks] = useState<Track[]>([]);
   const [isLoadingTracks, setIsLoadingTracks] = useState<boolean>(false);
 
@@ -54,11 +45,14 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   const [isCreating, setIsCreating] = useState<boolean>(false);
 
   // Delete Entire Playlist Confirmation Modal State
-  const [playlistToDelete, setPlaylistToDelete] = useState<PlaylistObj | null>(null);
+  const [playlistToDelete, setPlaylistToDelete] = useState<Playlist | null>(null);
   const [isDeletingPlaylist, setIsDeletingPlaylist] = useState<boolean>(false);
 
   // Song Action Menu Modal State
   const [activeSongForMenu, setActiveSongForMenu] = useState<Track | null>(null);
+
+  // Playlist Options Menu State (three-dot menu per playlist row)
+  const [playlistOptionsId, setPlaylistOptionsId] = useState<string | null>(null);
 
   // Combine queue & favorites for Liked Songs
   const likedTracks = queue.filter((t) => t.isFavorite || favorites.includes(t.id));
@@ -69,7 +63,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   const loadPlaylists = useCallback(async () => {
     setIsLoadingPlaylists(true);
     try {
-      const data = await fetchPlaylistsSupabase();
+      const data = await fetchUserPlaylists();
       if (data && data.length > 0) {
         setPlaylists(data);
       } else {
@@ -104,7 +98,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
 
     try {
       // Async Supabase DB insertion
-      const newPlaylist = await createPlaylistSupabase(title, desc);
+      const newPlaylist = await createPlaylist(title, desc);
 
       if (newPlaylist) {
         // Update local frontend state dynamically
@@ -128,14 +122,14 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
   // -------------------------------------------------------------
   // 3. FETCH SONGS FOR SELECTED PLAYLIST
   // -------------------------------------------------------------
-  const openPlaylistDetails = async (playlist: PlaylistObj) => {
+  const openPlaylistDetails = async (playlist: Playlist) => {
     setSelectedPlaylist(playlist);
     setIsLoadingTracks(true);
     setPlaylistTracks([]);
 
     try {
       // Fetch tracks linked to playlist_id from Supabase
-      const savedTracks = await fetchPlaylistTracksSupabase(playlist.id);
+      const savedTracks = await fetchPlaylistTracks(playlist.id);
 
       if (savedTracks && savedTracks.length > 0) {
         setPlaylistTracks(savedTracks);
@@ -160,7 +154,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
 
     try {
       // Delete entry from Supabase playlist_tracks matching playlist_id and track_id
-      await removeTrackFromPlaylistSupabase(selectedPlaylist.id, trackId);
+      await removeSongFromPlaylist(selectedPlaylist.id, trackId);
 
       // Instantly update local frontend UI state
       setPlaylistTracks((prev) => prev.filter((t) => t.id !== trackId));
@@ -185,7 +179,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
 
     try {
       // Execute deletion from Supabase DB
-      await deletePlaylistSupabase(targetId);
+      await deletePlaylist(targetId);
 
       // Update local state, clear selected playlist & navigate back to Library root
       setPlaylists((prev) => prev.filter((pl) => pl.id !== targetId));
@@ -207,6 +201,7 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
       setIsDeletingPlaylist(false);
     }
   };
+
 
   return (
     <div className="bg-[#121212] text-white min-h-screen pb-40 transition-colors duration-300 font-sans">
@@ -460,11 +455,22 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
                 <h3 className="text-lg font-extrabold text-white">
                   {activeFilter === 'liked' ? 'Your Liked Songs' : 'Your Playlists'}
                 </h3>
-                {isLoadingPlaylists && (
-                  <span className="material-symbols-outlined text-[#1DB954] animate-spin text-sm">
-                    progress_activity
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {activeFilter === 'playlists' && (
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="px-4 py-2 rounded-full text-xs font-extrabold bg-[#1DB954]/10 border border-[#1DB954]/40 text-[#1DB954] hover:bg-[#1DB954]/20 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <span className="material-symbols-outlined text-sm">add</span>
+                      Create Playlist
+                    </button>
+                  )}
+                  {isLoadingPlaylists && (
+                    <span className="material-symbols-outlined text-[#1DB954] animate-spin text-sm">
+                      progress_activity
+                    </span>
+                  )}
+                </div>
               </div>
 
               {activeFilter === 'liked' ? (
@@ -514,34 +520,69 @@ export const YourLibraryScreen: React.FC<YourLibraryScreenProps> = ({ onNavigate
                 playlists.map((pl) => (
                   <div
                     key={pl.id}
-                    onClick={() => openPlaylistDetails(pl)}
-                    className="flex items-center gap-4 p-3.5 bg-[#181818] border border-[#282828] rounded-2xl hover:bg-[#282828] transition-all cursor-pointer group"
+                    className="relative"
                   >
-                    <div className="w-14 h-14 rounded-xl bg-[#282828] flex items-center justify-center text-[#1DB954] flex-shrink-0 border border-[#3E3E3E]">
-                      <span className="material-symbols-outlined text-2xl">queue_music</span>
-                    </div>
-                    <div className="flex-grow min-w-0">
-                      <h4 className="text-base font-bold text-white truncate">{pl.title}</h4>
-                      <p className="text-xs text-[#B3B3B3] font-medium">
-                        {pl.description || 'Tap to view tracks'}
-                      </p>
-                    </div>
-
-                    {/* Quick Delete Playlist Action */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setPlaylistToDelete(pl);
-                      }}
-                      className="w-8 h-8 rounded-full hover:bg-red-500/20 flex items-center justify-center text-[#B3B3B3] hover:text-red-400 transition-colors"
-                      title="Delete Playlist"
+                    <div
+                      onClick={() => openPlaylistDetails(pl)}
+                      className="flex items-center gap-4 p-3.5 bg-[#181818] border border-[#282828] rounded-2xl hover:bg-[#282828] transition-all cursor-pointer group"
                     >
-                      <span className="material-symbols-outlined text-lg">delete</span>
-                    </button>
+                      <div className="w-14 h-14 rounded-xl bg-[#282828] flex items-center justify-center text-[#1DB954] flex-shrink-0 border border-[#3E3E3E]">
+                        <span className="material-symbols-outlined text-2xl">queue_music</span>
+                      </div>
+                      <div className="flex-grow min-w-0">
+                        <h4 className="text-base font-bold text-white truncate">{pl.title}</h4>
+                        <p className="text-xs text-[#B3B3B3] font-medium">
+                          {pl.description || 'Tap to view tracks'}
+                        </p>
+                      </div>
 
-                    <span className="material-symbols-outlined text-[#B3B3B3] group-hover:text-[#1DB954]">
-                      chevron_right
-                    </span>
+                      {/* Playlist Options Menu (...) Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPlaylistOptionsId(playlistOptionsId === pl.id ? null : pl.id);
+                        }}
+                        className="w-9 h-9 rounded-full hover:bg-[#3E3E3E] flex items-center justify-center text-[#B3B3B3] hover:text-white transition-colors cursor-pointer"
+                        title="Playlist Options"
+                      >
+                        <span className="material-symbols-outlined text-lg">more_vert</span>
+                      </button>
+
+                      <span className="material-symbols-outlined text-[#B3B3B3] group-hover:text-[#1DB954]">
+                        chevron_right
+                      </span>
+                    </div>
+
+                    {/* Dropdown Options Menu for Playlist Row */}
+                    {playlistOptionsId === pl.id && (
+                      <div
+                        className="absolute right-12 top-14 z-30 w-48 bg-[#282828] border border-[#3E3E3E] rounded-2xl shadow-2xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150"
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlaylistOptionsId(null);
+                            openPlaylistDetails(pl);
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs font-bold text-white hover:bg-[#3E3E3E] flex items-center gap-3 transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-[#1DB954] text-base">visibility</span>
+                          View Tracks
+                        </button>
+                        <div className="h-px bg-[#3E3E3E]" />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPlaylistOptionsId(null);
+                            setPlaylistToDelete(pl);
+                          }}
+                          className="w-full text-left px-4 py-3 text-xs font-bold text-red-400 hover:bg-red-500/10 flex items-center gap-3 transition-colors cursor-pointer"
+                        >
+                          <span className="material-symbols-outlined text-base">delete</span>
+                          Delete Playlist
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))
               )}

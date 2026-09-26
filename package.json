@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "raaga",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,10 +9,8 @@
     "build:mobile": "vite build && cap sync",
     "android": "cap run android",
     "android:open": "cap open android",
-    "open:android": "cap open android",
     "ios": "cap run ios",
     "ios:open": "cap open ios",
-    "open:ios": "cap open ios",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit"
@@ -20,6 +18,7 @@
   "dependencies": {
     "@capacitor/android": "^8.4.2",
     "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
     "@capacitor/core": "^8.4.2",
     "@capacitor/ios": "^8.4.2",
     "@google/genai": "^2.4.0",

@@ -1,4 +1,4 @@
-import { Track, Playlist, SearchCategory } from './types';
+import { Track, Playlist, SearchCategory } from '../types';
 
 export const TRACKS: Track[] = [
   {
@@ -159,7 +159,7 @@ export const CATEGORIES: SearchCategory[] = [
   { id: 'c8', title: 'Retro Classics', icon: 'album', colorFrom: '#F5F3FF', colorTo: '#EDE9FE', textColor: '#4C1D95' },
 ];
 
-export const IMAGINE_DRAGONS_ARTIST = {
+export const FEATURED_ARTIST = {
   name: 'Arijit Singh',
   listeners: 'Over 85M monthly listeners. Iconic Indian playback singer & composer.',
   imageUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=500&auto=format&fit=crop&q=60',

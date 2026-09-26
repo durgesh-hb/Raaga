@@ -1,4 +1,4 @@
-import { SongDTO, Track } from '../types';
+import { SongDTO, Track, OnboardingPreferencesPayload, ListeningEventPayload, HomeRecommendationResponse, UserPreference } from '../types';
 import { Capacitor } from '@capacitor/core';
 
 export const DEFAULT_LIVE_BACKEND_URL = 'https://raaga-backend-deployment-bwu1.onrender.com';
@@ -63,6 +63,7 @@ export const mapSongDtoToTrack = (dto: SongDTO): Track => {
     audioUrl: resolveAudioStreamUrl(rawAudioUrl),
     duration: dto.duration || 180,
     genre: dto.language || 'Music',
+    language: dto.language,
     isFavorite: false,
   };
 };
@@ -354,10 +355,104 @@ export class MusicApiService {
       return null;
     }
   }
+
+  // =====================================================
+  // RECOMMENDATION SYSTEM APIS
+  // =====================================================
+
+  /**
+   * Save onboarding preferences
+   * POST /api/v1/recommendations/preferences
+   */
+  static async saveUserPreferences(payload: OnboardingPreferencesPayload): Promise<boolean> {
+    try {
+      const response = await fetchWithColdStartTimeout(`${API_BASE_URL}/api/v1/recommendations/preferences`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: payload.userId || 'user_default',
+          languages: payload.languages,
+          artists: payload.artists,
+          genres: payload.genres || [],
+          songs: payload.songs || [],
+        }),
+      }, 20000);
+      return response.ok;
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to save preferences:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Retrieve user preferences
+   * GET /api/v1/recommendations/preferences?userId=...
+   */
+  static async getUserPreferences(userId = 'user_default'): Promise<UserPreference[]> {
+    try {
+      const response = await fetchWithColdStartTimeout(`${API_BASE_URL}/api/v1/recommendations/preferences?userId=${encodeURIComponent(userId)}`, {
+        method: 'GET',
+      }, 15000);
+      if (!response.ok) return [];
+      return await response.json();
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to get user preferences:', e);
+      return [];
+    }
+  }
+
+  /**
+   * Record listening/interaction behavioral event
+   * POST /api/v1/recommendations/event
+   */
+  static async recordListeningEvent(payload: ListeningEventPayload): Promise<boolean> {
+    try {
+      const response = await fetchWithColdStartTimeout(`${API_BASE_URL}/api/v1/recommendations/event`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: payload.userId || 'user_default',
+          trackId: payload.trackId,
+          title: payload.title || '',
+          artist: payload.artist || '',
+          language: payload.language || '',
+          genre: payload.genre || '',
+          playedSeconds: payload.playedSeconds || 0,
+          duration: payload.duration || 0,
+          completed: payload.completed || false,
+          action: payload.action,
+        }),
+      }, 10000);
+      return response.ok;
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to record listening event:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Fetch home screen personalized recommendations
+   * GET /api/v1/recommendations/home?userId=...
+   */
+  static async getHomeRecommendations(userId = 'user_default'): Promise<HomeRecommendationResponse | null> {
+    try {
+      const response = await fetchWithColdStartTimeout(`${API_BASE_URL}/api/v1/recommendations/home?userId=${encodeURIComponent(userId)}`, {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      }, 45000);
+
+      if (!response.ok) return null;
+      return await response.json();
+    } catch (e) {
+      console.warn('[MusicApiService] Failed to fetch home recommendations:', e);
+      return null;
+    }
+  }
 }
 
 /**
- * Debounce helper
+ * @deprecated Use import { debounce } from '../utils/debounce' instead.
+ * Kept here temporarily for backward compatibility.
  */
 export function debounce<
   T extends (...args: any[]) => void
